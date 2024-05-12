@@ -215,13 +215,6 @@ class DataPath:
             self.memory.memory[self.data_address] = symbol_code
             logging.debug("input: %s", repr(symbol))
 
-        elif sel == Opcode.ADD.value:
-            self.memory.memory[self.data_address] = self.acc + self.buffer
-            if self.memory.memory[self.data_address] >= 128:
-                self.memory.memory[self.data_address] = -128 + self.memory.memory[self.data_address] % 256
-        elif sel == Opcode.MOD.value:
-            self.memory.memory[self.data_address] = self.acc % self.buffer
-
     def signal_output(self):
         """Вывести значение аккумулятора в порт вывода.
 
@@ -499,26 +492,49 @@ class ControlUnit:
             return True
 
         elif opcode == Opcode.PRINT_STR:
-            self.memory.memory[self.program_counter] = self.data_path.data_address
+            if phase == 1:
+                print(self.memory.memory)
+                addr = instr["arg"]
+                addr_ = self.memory.memory[addr]
+                self.tick()
+                return None
+            elif phase == 2:
+                addr = instr["arg"]
+                # так называемая косвенная относительная адресация
+                addr_ = self.memory.memory[addr]
+                length = self.memory.memory[addr_]
 
-            addr = instr["arg"]
-            addr_ = self.memory.memory[addr]
+                self.data_path.data_address = addr_
 
-            length = self.memory.memory[addr_]
-            self.data_path.data_address = addr_ + 1
-
-            for i in range(length):
-                self.data_path.signal_latch_acc()
-                # self.tick()
-                self.data_path.signal_output()
+                self.tick()
+            elif phase == 3:
                 self.data_path.data_address += 1
-            # self.signal_latch_program_counter(sel_next=True)
-            # self.tick()
-            # return True
 
-            self.signal_latch_program_counter(sel_next=True)
-            self.tick()
-            return True
+                self.tick()
+            else:
+                addr = instr["arg"]
+                addr_ = self.memory.memory[addr]
+                length = self.memory.memory[addr_]
+
+                # TODO убрать это дублирование кода
+                for i in range(length):
+                    if phase == 3 + 3 * i:
+                        self.data_path.signal_latch_acc()
+                        print(self.data_path.acc, self.data_path.data_address)
+                        self.tick()
+                        return None
+                    elif phase == 3 + 3 * i + 1:
+                        self.data_path.signal_output()
+                        self.tick()
+                        return None
+                    elif phase == 3 + 3 * i + 2:
+                        self.data_path.data_address += 1
+                        self.tick()
+                        return None
+
+                self.signal_latch_program_counter(sel_next=True)
+                self.tick()
+                return True
 
         elif opcode in {Opcode.MOV, Opcode.MOD, Opcode.MUL, Opcode.ADD, Opcode.SUB, Opcode.JNZ}:
             arg = instr["arg"]
@@ -536,7 +552,7 @@ class ControlUnit:
             self.memory.memory[self.data_path.data_address],
             self.data_path.registers.get("rs"),
         )
-
+        # print(self.program_counter, self.memory.memory)
         instr = self.memory.memory[self.program_counter]
         opcode = instr["opcode"]
         instr_repr = str(opcode)

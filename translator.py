@@ -6,6 +6,8 @@ import sys
 
 from isa import Opcode, Term, write_code
 
+SHIFT = 100
+
 
 def get_meaningful_token(line):
     """Извлекаем из строки содержательный токен (метка или инструкция), удаляем
@@ -41,7 +43,7 @@ def translate_stage_1(text):
         if token.endswith(":"):  # токен содержит метку
             label = token.strip(":")
             assert label not in labels, "Redefinition of label: {}".format(label)
-            labels[label] = 100 + pc  # TODO use constant!
+            labels[label] = SHIFT + pc  # TODO use constant!
         elif " " in token:  # токен содержит инструкцию с операндом (отделены пробелом)
             sub_tokens = token.split(maxsplit=1) if token.startswith(Opcode.ADD_STR.value) else token.split()
             assert len(sub_tokens) == 2, "Invalid instruction: {}".format(token)
@@ -74,6 +76,9 @@ def translate_stage_2(labels, code):
             if instruction["opcode"].value in {Opcode.JMP}:
                 instruction["arg"] = labels[label[0]]
             elif instruction["opcode"].value == Opcode.PRINT_STR:
+                # print(label)
+                # print(labels[label[0]])
+                # print(code[labels[label[0]] - SHIFT])
                 instruction["arg"] = labels[label[0]]
             else:
                 instruction["arg"] = labels[label[0]], label[1]
