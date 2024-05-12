@@ -1,0 +1,7 @@
+[{"index": 0, "opcode": "add_str", "arg": ["19", "'what is your name? '"], "term": [2, 0, "add_str 19,'what is your name? '"]},
+ {"index": 1, "opcode": "add_str", "arg": ["6", "'hello '"], "term": [4, 0, "add_str 6,'hello '"]},
+ {"index": 2, "opcode": "add_str", "arg": ["1", "'!'"], "term": [6, 0, "add_str 1,'!'"]},
+ {"index": 3, "opcode": "print_str", "arg": 100, "term": [8, 0, "print_str question"]},
+ {"index": 4, "opcode": "print_str", "arg": 101, "term": [11, 0, "print_str hello_start"]},
+ {"index": 5, "opcode": "print_str", "arg": 102, "term": [13, 0, "print_str hello_end"]},
+ {"index": 6, "opcode": "halt", "term": [14, 0, "halt"]}]
