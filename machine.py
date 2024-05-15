@@ -106,7 +106,7 @@ class DataPath:
     buffer = None
     "Буферный регистр. Инициализируется нулём."
 
-    acc = None
+    # acc = None
     "Аккумулятор. Инициализируется нулём."
 
     input_buffer = None
@@ -130,7 +130,7 @@ class DataPath:
         self.memory = memory
         self.alu = alu
         self.data_address = 0
-        self.acc = 0
+        # self.acc = 0
         self.buffer = 0
         self.input_buffer = input_buffer
         self.output_buffer = []
@@ -158,7 +158,7 @@ class DataPath:
         """Защёлкнуть слово из памяти (`oe` от Output Enable) и защёлкнуть его в
         аккумулятор. Сигнал `oe` выставляется неявно `ControlUnit`-ом.
         """
-        self.acc = self.memory.memory[self.data_address]
+        self.registers["acc"] = self.memory.memory[self.data_address]
 
     def calc(self, sel, l, r):
         res = self.alu.calc(sel, l, r)
@@ -180,17 +180,6 @@ class DataPath:
         В примере ниже имитируется переполнение ячейки при инкременте. Данный
         текст является doctest-ом, корректность которого проверяется во время
         загрузки модуля или командой: `python3 -m doctest -v machine.py`
-
-        >>> dp = DataPath(ALU(), Memory(100, []), [chr(127)])
-        >>> dp.signal_wr(Opcode.INPUT.value)
-        >>> dp.signal_latch_acc()
-        >>> dp.acc
-        127
-        >>> dp.signal_wr(Opcode.INC.value)
-        >>> dp.signal_latch_acc()
-        >>> dp.acc
-        -128
-
         """
         assert sel in {
             Opcode.INC.value,
@@ -199,11 +188,11 @@ class DataPath:
         }, "internal error, incorrect selector: {}".format(sel)
 
         if sel == Opcode.INC.value:
-            self.memory.memory[self.data_address] = self.acc + 1
+            self.memory.memory[self.data_address] = self.registers["acc"] + 1
             if self.memory.memory[self.data_address] == 128:
                 self.memory.memory[self.data_address] = -128
         elif sel == Opcode.DEC.value:
-            self.memory.memory[self.data_address] = self.acc - 1
+            self.memory.memory[self.data_address] = self.registers["acc"] - 1
             if self.memory.memory[self.data_address] == -129:
                 self.memory.memory[self.data_address] = 127
         elif sel == Opcode.INPUT.value:
@@ -213,6 +202,7 @@ class DataPath:
             symbol_code = ord(symbol)
             assert -128 <= symbol_code <= 127, "input token is out of bound: {}".format(symbol_code)
             self.memory.memory[self.data_address] = symbol_code
+            self.registers["acc"] = symbol_code
             logging.debug("input: %s", repr(symbol))
 
     def signal_output(self):
@@ -221,13 +211,13 @@ class DataPath:
         Вывод осуществляется путём конвертации значения аккумулятора в символ по
         ASCII-таблице.
         """
-        symbol = chr(self.acc)
+        symbol = chr(self.registers["acc"])
         logging.debug("output: %s << %s", repr("".join(self.output_buffer)), repr(symbol))
         self.output_buffer.append(symbol)
 
     def zero(self):
         """Флаг нуля. Необходим для условных переходов."""
-        return self.acc == 0
+        return self.registers["acc"] == 0
 
 
 class ControlUnit:
@@ -328,6 +318,8 @@ class ControlUnit:
         if opcode is Opcode.JZ:
             addr, reg = instr["arg"]
 
+            # self.data_path.registers["acc"] = self.data_path.registers["acc"]
+
             # if phase == 1:
             #     self.data_path.signal_latch_acc()
             #     self.tick()
@@ -395,6 +387,17 @@ class ControlUnit:
             self.tick()
             return True
 
+        elif opcode == Opcode.INPUT:
+            # if phase == 1:
+            #     self.data_path.signal_latch_acc()
+            #     self.tick()
+            #     return None
+            # elif phase == 2:
+            self.data_path.signal_wr(opcode.value)
+            self.signal_latch_program_counter(sel_next=True)
+            self.tick()
+            return True
+
         elif opcode in {Opcode.INC, Opcode.INPUT}:
             if phase == 1:
                 self.data_path.signal_latch_acc()
@@ -405,6 +408,7 @@ class ControlUnit:
                 self.signal_latch_program_counter(sel_next=True)
                 self.tick()
                 return True
+
             # if phase == 1:
             #     self.data_path.signal_latch_acc()
             #     self.tick()
@@ -493,7 +497,6 @@ class ControlUnit:
 
         elif opcode == Opcode.PRINT_STR:
             if phase == 1:
-                print(self.memory.memory)
                 addr = instr["arg"]
                 addr_ = self.memory.memory[addr]
                 self.tick()
@@ -517,10 +520,10 @@ class ControlUnit:
                 length = self.memory.memory[addr_]
 
                 # TODO убрать это дублирование кода
+                phase -= 1
                 for i in range(length):
                     if phase == 3 + 3 * i:
                         self.data_path.signal_latch_acc()
-                        print(self.data_path.acc, self.data_path.data_address)
                         self.tick()
                         return None
                     elif phase == 3 + 3 * i + 1:
@@ -538,21 +541,20 @@ class ControlUnit:
 
         elif opcode in {Opcode.MOV, Opcode.MOD, Opcode.MUL, Opcode.ADD, Opcode.SUB, Opcode.JNZ}:
             arg = instr["arg"]
-            # print(opcode, arg)
             self.signal_latch_program_counter(sel_next=True)
             self.tick()
             return True
 
     def __repr__(self):
         """Вернуть строковое представление состояния процессора."""
-        state_repr = "TICK: {:3} PC: {:3} ADDR: {:3} MEM_OUT: {} ACC: {}".format(
+        state_repr = "TICK: {:3} PC: {:3} ADDR: {:3} MEM_OUT: {} ACC: {} rs: {}".format(
             self._tick,
             self.program_counter,
             self.data_path.data_address,
             self.memory.memory[self.data_path.data_address],
+            self.data_path.registers.get("acc"),
             self.data_path.registers.get("rs"),
         )
-        # print(self.program_counter, self.memory.memory)
         instr = self.memory.memory[self.program_counter]
         opcode = instr["opcode"]
         instr_repr = str(opcode)

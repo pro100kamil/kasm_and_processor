@@ -1,0 +1,47 @@
+in_source: |-
+  input
+  loop:
+    jz break,acc
+    print
+    input
+    jmp loop
+  break:
+    halt
+in_stdin: |-
+  foo
+out_code: |-
+  [{"index": 0, "opcode": "input", "term": [1, 0, "input"]},
+   {"index": 1, "opcode": "jz", "arg": [105, "acc"], "term": [3, 0, "jz break,acc"]},
+   {"index": 2, "opcode": "print", "term": [4, 0, "print"]},
+   {"index": 3, "opcode": "input", "term": [5, 0, "input"]},
+   {"index": 4, "opcode": "jmp", "arg": 101, "term": [6, 0, "jmp loop"]},
+   {"index": 5, "opcode": "halt", "term": [8, 0, "halt"]}]
+out_stdout: |
+  source LoC: 8 code instr: 6
+  ============================================================
+  foo
+  instr_counter:  11 ticks: 14
+out_log: |
+  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:   0 MEM_OUT: 0 ACC: 0 	input  ('input'@1:0)
+  DEBUG   machine:signal_wr     input: 'f'
+  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:   0 MEM_OUT: 102 ACC: 102 	jz [105, 'acc']  ('jz break,acc'@3:0)
+  DEBUG   machine:simulation    TICK:   2 PC: 102 ADDR:   0 MEM_OUT: 102 ACC: 102 	print  ('print'@4:0)
+  DEBUG   machine:simulation    TICK:   3 PC: 102 ADDR:   0 MEM_OUT: 102 ACC: 102 	print  ('print'@4:0)
+  DEBUG   machine:signal_output output: '' << 'f'
+  DEBUG   machine:simulation    TICK:   4 PC: 103 ADDR:   0 MEM_OUT: 102 ACC: 102 	input  ('input'@5:0)
+  DEBUG   machine:signal_wr     input: 'o'
+  DEBUG   machine:simulation    TICK:   5 PC: 104 ADDR:   0 MEM_OUT: 111 ACC: 111 	jmp 101  ('jmp loop'@6:0)
+  DEBUG   machine:simulation    TICK:   6 PC: 101 ADDR:   0 MEM_OUT: 111 ACC: 111 	jz [105, 'acc']  ('jz break,acc'@3:0)
+  DEBUG   machine:simulation    TICK:   7 PC: 102 ADDR:   0 MEM_OUT: 111 ACC: 111 	print  ('print'@4:0)
+  DEBUG   machine:simulation    TICK:   8 PC: 102 ADDR:   0 MEM_OUT: 111 ACC: 111 	print  ('print'@4:0)
+  DEBUG   machine:signal_output output: 'f' << 'o'
+  DEBUG   machine:simulation    TICK:   9 PC: 103 ADDR:   0 MEM_OUT: 111 ACC: 111 	input  ('input'@5:0)
+  DEBUG   machine:signal_wr     input: 'o'
+  DEBUG   machine:simulation    TICK:  10 PC: 104 ADDR:   0 MEM_OUT: 111 ACC: 111 	jmp 101  ('jmp loop'@6:0)
+  DEBUG   machine:simulation    TICK:  11 PC: 101 ADDR:   0 MEM_OUT: 111 ACC: 111 	jz [105, 'acc']  ('jz break,acc'@3:0)
+  DEBUG   machine:simulation    TICK:  12 PC: 102 ADDR:   0 MEM_OUT: 111 ACC: 111 	print  ('print'@4:0)
+  DEBUG   machine:simulation    TICK:  13 PC: 102 ADDR:   0 MEM_OUT: 111 ACC: 111 	print  ('print'@4:0)
+  DEBUG   machine:signal_output output: 'fo' << 'o'
+  DEBUG   machine:simulation    TICK:  14 PC: 103 ADDR:   0 MEM_OUT: 111 ACC: 111 	input  ('input'@5:0)
+  WARNING machine:simulation    Input buffer is empty!
+  INFO    machine:simulation    output_buffer: 'foo'

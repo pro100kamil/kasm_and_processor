@@ -1,6 +1,6 @@
 input
 loop:
-    jz break
+    jz break,acc
     print
     input
     jmp loop
