@@ -18,6 +18,8 @@ from isa import Opcode, read_code
 
 
 class Memory:
+    """Память фон Неймановская архитектура"""
+
     def __init__(self, data_memory_size: int, code: list):
         # data_memory_size = 100
         self.shift = data_memory_size
@@ -25,6 +27,8 @@ class Memory:
 
 
 class ALU:
+    """Арифметико-логическое устройство"""
+
     def calc(self, sel: Opcode, l, r):
         return {
             Opcode.INC: l + 1,
@@ -273,12 +277,21 @@ class ControlUnit:
     _tick = None
     "Текущее модельное время процессора (в тактах). Инициализируется нулём."
 
+    handling_interruption: bool = None
+    "Происходит ли в данный момент обработка прерывания"
+
+    interruption_enabled: bool = None
+    "Разрешены ли прерывания"
+
     def __init__(self, memory: Memory, data_path: DataPath):
         # self.program = program
         self.memory = memory
         self.program_counter = memory.shift
         self.data_path = data_path
         self._tick = 0
+
+        self.handling_interruption = False
+        self.interruption_enabled = False
 
     def tick(self):
         """Продвинуть модельное время процессора вперёд на один такт."""
@@ -300,6 +313,34 @@ class ControlUnit:
             instr = self.memory.memory[self.program_counter]
             assert "arg" in instr, "internal error"
             self.program_counter = instr["arg"][0]
+
+    def check_and_handle_interruption(self) -> None:
+        if not self.interruption_enabled:
+            return
+        if not self.data_path.interruption_controller.interruption:
+            return
+        if self.handling_interruption:
+            return
+
+        # во время прерывания не может быть другое прерывание
+        self.handling_interruption = True
+
+        self.data_path.signal_latch_address_stack_top(self.data_path.pc)
+        self.tick()
+
+        self.data_path.signal_write_address_stack(self.data_path.address_stack_top)
+        self.data_path.signal_latch_pc(self.data_path.interruption_controller.interruption_number)
+        self.tick()
+
+        address = self.data_path.signal_read_memory(self.data_path.pc)
+        self.data_path.signal_latch_data_stack_top_1(address)
+        self.tick()
+
+        self.data_path.signal_latch_pc(self.data_path.data_stack_top_1)
+        self.tick()
+
+        logging.debug("START HANDLING INTERRUPTION")
+        return
 
     def decode_and_execute_control_flow_instruction(self, instr, opcode, phase):
         """Декодировать и выполнить инструкцию управления потоком исполнения. В
@@ -591,6 +632,9 @@ def simulation(code, input_tokens, data_memory_size, limit):
     try:
         while instr_counter < limit:
             phase = 1
+            # TODO
+            # control_unit.check_and_handle_interruption()
+
             while control_unit.decode_and_execute_instruction(phase) is None:
                 phase += 1
                 logging.debug("%s", control_unit)
@@ -627,6 +671,19 @@ def main(code_file, input_file):
 
     print("".join(output))
     print("instr_counter: ", instr_counter, "ticks:", ticks)
+
+
+def initiate_interruption(control_unit, input_tokens):
+    if len(input_tokens) != 0:
+        next_token = input_tokens[0]
+        if control_unit.tick_counter >= next_token[0]:
+            control_unit.data_path.interruption_controller.generate_interruption(1)
+            if next_token[1]:
+                control_unit.data_path.input_buffer = ord(next_token[1])
+            else:
+                control_unit.data_path.input_buffer = 0
+            return input_tokens[1:]
+    return input_tokens
 
 
 if __name__ == "__main__":

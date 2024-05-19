@@ -3,20 +3,22 @@
 """
 
 import sys
+from typing import Tuple, Dict, List, Any
 
 from isa import Opcode, Term, write_code
 
 SHIFT = 100
 
 
-def get_meaningful_token(line):
+def get_meaningful_token(line: str) -> str:
     """Извлекаем из строки содержательный токен (метка или инструкция), удаляем
     комментарии и пробелы в начале/конце строки.
     """
     return line.split(";", 1)[0].strip()
 
 
-def translate_stage_1(text):
+def translate_stage_1(text: str) -> tuple[
+    dict[str, int], list[dict[str, int | Term | Opcode | Any] | dict[str, int | Term | Opcode]]]:
     """Первый проход транслятора. Преобразование текста программы в список
     инструкций и определение адресов меток.
 
@@ -50,7 +52,7 @@ def translate_stage_1(text):
             mnemonic, arg = sub_tokens
             arg = arg.split(',')
             opcode = Opcode(mnemonic)
-            # assert opcode == Opcode.JZ or opcode == Opcode.JMP, "Only `jz` and `jnz` instructions take an argument"
+
             assert opcode in OPCODES_WITH_OPERANDS, \
                 "This instruction doesn't take an argument"
 
@@ -85,7 +87,7 @@ def translate_stage_2(labels, code):
     return code
 
 
-def translate(text):
+def translate(text: str) -> list:
     """Трансляция текста программы на Asm в машинный код.
 
     Выполняется в два прохода:
@@ -101,7 +103,7 @@ def translate(text):
     return code
 
 
-def main(source, target):
+def main(source: str, target: str) -> None:
     """Функция запуска транслятора. Параметры -- исходный и целевой файлы."""
     with open(source, encoding="utf-8") as f:
         source = f.read()
