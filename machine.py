@@ -122,6 +122,8 @@ class DataPath:
     data_address = None
     "Адрес в памяти данных. Инициализируется нулём."
 
+    new_data_address = None
+
     buffer = None
     "Буферный регистр. Инициализируется нулём."
 
@@ -150,10 +152,11 @@ class DataPath:
         # self.data_memory = [0] * data_memory_size
         self.memory = memory
         self.alu = alu
-        self.data_address = 0
+        self.data_address = 29
+        self.new_data_address = 29
         # self.acc = 0
         self.buffer = 0
-        # self.input_buffer = input_buffer
+
         self.input_buffer = 0
         self.output_buffer = []
 
@@ -173,8 +176,10 @@ class DataPath:
 
         if sel == Opcode.LEFT.value:
             self.data_address -= 1
+            self.new_data_address -= 1
         elif sel == Opcode.RIGHT.value:
             self.data_address += 1
+            self.new_data_address += 1
 
         assert 0 <= self.data_address < len(self.memory.memory), "out of memory: {}".format(self.data_address)
 
@@ -220,10 +225,8 @@ class DataPath:
             if self.memory.memory[self.data_address] == -129:
                 self.memory.memory[self.data_address] = 127
         elif sel == Opcode.INPUT.value:
-            # if len(self.input_buffer) == 0:
-            #     raise EOFError()
-            # symbol = self.input_buffer.pop
-            # symbol_code = ord(symbol)
+            self.data_address = self.new_data_address
+
             symbol_code = self.input_buffer
             symbol = chr(symbol_code)
             assert -128 <= symbol_code <= 127, "input token is out of bound: {}".format(symbol_code)
@@ -453,14 +456,17 @@ class ControlUnit:
             return True
 
         elif opcode == Opcode.INPUT:
+
             # if phase == 1:
             #     self.data_path.signal_latch_acc()
             #     self.tick()
             #     return None
             # elif phase == 2:
+
             self.data_path.signal_wr(opcode.value)
             self.signal_latch_program_counter(sel_next=True)
             self.tick()
+
             return True
 
         elif opcode in {Opcode.INPUT}:
@@ -553,19 +559,19 @@ class ControlUnit:
             return True
 
         elif opcode == Opcode.ADD_STR:
-            self.memory.memory[self.program_counter] = self.data_path.data_address
-
-            length, s = instr["arg"]
-
-            length = int(length)
-            s = s[1:-1]
-
-            self.memory.memory[self.data_path.data_address] = length
-            self.data_path.data_address += 1
-
-            for i in range(length):
-                self.memory.memory[self.data_path.data_address] = ord(s[i])
-                self.data_path.data_address += 1
+            # self.memory.memory[self.program_counter] = self.data_path.data_address
+            #
+            # length, s = instr["arg"]
+            #
+            # length = int(length)
+            # s = s[1:-1]
+            #
+            # self.memory.memory[self.data_path.data_address] = length
+            # self.data_path.data_address += 1
+            #
+            # for i in range(length):
+            #     self.memory.memory[self.data_path.data_address] = ord(s[i])
+            #     self.data_path.data_address += 1
 
             self.signal_latch_program_counter(sel_next=True)
             self.tick()
@@ -611,6 +617,12 @@ class ControlUnit:
 
                 # TODO убрать это дублирование кода
                 phase -= 1
+                if addr_ == 29:
+                    print("length:", length, addr_)
+                    for i, el in enumerate(self.memory.memory):
+                        print(el, end=' ')
+                        if i % 10 == 9:
+                            print()
                 for i in range(length):
                     if phase == 3 + 3 * i:
                         self.data_path.signal_latch_acc()
@@ -636,8 +648,17 @@ class ControlUnit:
             return True
 
         elif opcode == Opcode.STORE:
-            arg = instr["arg"]
-            print(arg)
+            args: list[str]
+            args = instr["arg"]
+            a, b = args
+            b: str
+            a = int(a)
+
+            if b.isdigit():
+                self.memory.memory[a] = int(b)
+            else:
+                self.memory.memory[a] = self.data_path.registers.get(b)
+
             self.signal_latch_program_counter(sel_next=True)
             self.tick()
             return True
@@ -703,11 +724,13 @@ class ControlUnit:
             term = instr["term"]
             instr_repr += "  ('{}'@{}:{})".format(term.symbol, term.line, term.pos)
 
-        return "{} \t{}".format(state_repr, instr_repr)
+        return "{} \t{} \t{}".format(state_repr, instr_repr, self.data_path.input_buffer)
 
 
 def initiate_interruption(control_unit: ControlUnit, input_tokens: list):
-    if len(input_tokens) != 0:
+    if not control_unit.handling_interruption and \
+            control_unit.interruption_enabled and \
+            len(input_tokens) != 0:
         next_token = input_tokens[0]
         if control_unit.current_tick() > next_token[0]:
             control_unit.data_path.interruption_controller.generate_interruption(1)
@@ -715,12 +738,8 @@ def initiate_interruption(control_unit: ControlUnit, input_tokens: list):
                 control_unit.data_path.input_buffer = ord(next_token[1])
             else:
                 control_unit.data_path.input_buffer = 0
-                for i, el in enumerate(control_unit.memory.memory):
-                    print(el, end=' ')
-                    if i % 10 == 9:
-                        print()
+
             return input_tokens[1:]
-    # control_unit.data_path.input_buffer = 0
     return input_tokens
 
 
@@ -748,6 +767,7 @@ def simulation(code: list, input_tokens: list, data_memory_size: int, limit: int
         while instr_counter < limit:
             phase = 1
             # TODO обдумать
+
             input_tokens = initiate_interruption(control_unit, input_tokens)
             control_unit.check_and_handle_interruption()
             # if input_tokens and input_tokens[0][0] >= control_unit.program_counter:
