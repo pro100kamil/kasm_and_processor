@@ -1,8 +1,14 @@
-input
+ei
 loop:
+    jmp loop
+
+int1:
+    di
+    input
     jz break,acc
     print
-    input
-    jmp loop
+    ei
+    iret
+
 break:
     halt

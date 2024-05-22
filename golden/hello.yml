@@ -5,11 +5,11 @@ in_source: |-
   halt
 in_stdin: |
 out_log: |
-  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:   0 MEM_OUT: 0 ACC: 111 rs: 0 	add_str ['12', "'hello world!'"]  ('add_str 12,'hello world!''@2:0)
-  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:  13 MEM_OUT: 0 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:   2 PC: 101 ADDR:  13 MEM_OUT: 0 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:   3 PC: 101 ADDR:   0 MEM_OUT: 12 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:   4 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:   0 MEM_OUT: 0 ACC: 0 rs: 0 	add_str ['12', "'hello world!'"]  ('add_str 12,'hello world!''@2:0)
+  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:  13 MEM_OUT: 0 ACC: 0 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:   2 PC: 101 ADDR:  13 MEM_OUT: 0 ACC: 0 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:   3 PC: 101 ADDR:   0 MEM_OUT: 12 ACC: 0 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:   4 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 0 rs: 0 	print_str 100  ('print_str hello'@3:0)
   DEBUG   machine:simulation    TICK:   5 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 104 rs: 0 	print_str 100  ('print_str hello'@3:0)
   DEBUG   machine:signal_output output: '' << 'h'
   DEBUG   machine:simulation    TICK:   6 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 104 rs: 0 	print_str 100  ('print_str hello'@3:0)

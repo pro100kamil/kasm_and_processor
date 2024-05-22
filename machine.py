@@ -23,7 +23,8 @@ class Memory:
     def __init__(self, data_memory_size: int, code: list):
         # data_memory_size = 100
         self.shift = data_memory_size
-        self.memory = [0] * data_memory_size + code
+        # self.memory = [0] * data_memory_size + code
+        self.memory = code.copy()
 
 
 class ALU:
@@ -39,6 +40,20 @@ class ALU:
             Opcode.MOD: l % r if r != 0 else None,
             Opcode.MUL: l * r,
         }.get(sel.value)
+
+
+class InterruptionController:
+    interruption: bool = None
+    interruption_number: int = None
+
+    def __init__(self):
+        self.interruption = False
+        self.interruption_number = 0
+
+    def generate_interruption(self, number: int) -> None:
+        assert number == 1, f"Interruption controller doesn't invoke interruption-{number}"
+        self.interruption = True
+        self.interruption_number = number
 
 
 class DataPath:
@@ -127,7 +142,9 @@ class DataPath:
                  "r3": 0,
                  "r7": 0}
 
-    def __init__(self, alu: ALU, memory: Memory, input_buffer: list):
+    interruption_controller: InterruptionController = None
+
+    def __init__(self, alu: ALU, memory: Memory):
         # assert data_memory_size > 0, "Data_memory size should be non-zero"
         # self.data_memory_size = data_memory_size
         # self.data_memory = [0] * data_memory_size
@@ -136,8 +153,11 @@ class DataPath:
         self.data_address = 0
         # self.acc = 0
         self.buffer = 0
-        self.input_buffer = input_buffer
+        # self.input_buffer = input_buffer
+        self.input_buffer = 0
         self.output_buffer = []
+
+        self.interruption_controller = InterruptionController()
 
     def signal_latch_data_addr(self, sel):
         """Защёлкнуть адрес в памяти данных. Защёлкивание осуществляется на
@@ -200,10 +220,12 @@ class DataPath:
             if self.memory.memory[self.data_address] == -129:
                 self.memory.memory[self.data_address] = 127
         elif sel == Opcode.INPUT.value:
-            if len(self.input_buffer) == 0:
-                raise EOFError()
-            symbol = self.input_buffer.pop(0)
-            symbol_code = ord(symbol)
+            # if len(self.input_buffer) == 0:
+            #     raise EOFError()
+            # symbol = self.input_buffer.pop
+            # symbol_code = ord(symbol)
+            symbol_code = self.input_buffer
+            symbol = chr(symbol_code)
             assert -128 <= symbol_code <= 127, "input token is out of bound: {}".format(symbol_code)
             self.memory.memory[self.data_address] = symbol_code
             self.registers["acc"] = symbol_code
@@ -325,19 +347,20 @@ class ControlUnit:
         # во время прерывания не может быть другое прерывание
         self.handling_interruption = True
 
-        self.data_path.signal_latch_address_stack_top(self.data_path.pc)
-        self.tick()
-
-        self.data_path.signal_write_address_stack(self.data_path.address_stack_top)
-        self.data_path.signal_latch_pc(self.data_path.interruption_controller.interruption_number)
-        self.tick()
-
-        address = self.data_path.signal_read_memory(self.data_path.pc)
-        self.data_path.signal_latch_data_stack_top_1(address)
-        self.tick()
-
-        self.data_path.signal_latch_pc(self.data_path.data_stack_top_1)
-        self.tick()
+        self.program_counter = 108
+        # self.data_path.signal_latch_address_stack_top(self.data_path.pc)
+        # self.tick()
+        #
+        # self.data_path.signal_write_address_stack(self.data_path.address_stack_top)
+        # self.data_path.signal_latch_pc(self.data_path.interruption_controller.interruption_number)
+        # self.tick()
+        #
+        # address = self.data_path.signal_read_memory(self.data_path.pc)
+        # self.data_path.signal_latch_data_stack_top_1(address)
+        # self.tick()
+        #
+        # self.data_path.signal_latch_pc(self.data_path.data_stack_top_1)
+        # self.tick()
 
         logging.debug("START HANDLING INTERRUPTION")
         return
@@ -414,6 +437,7 @@ class ControlUnit:
         `decode_and_execute_control_flow_instruction`.
         """
         instr = self.memory.memory[self.program_counter]
+        # logging.debug("%s", instr)
         opcode = instr["opcode"]
 
         res = self.decode_and_execute_control_flow_instruction(instr, opcode, phase)
@@ -439,7 +463,7 @@ class ControlUnit:
             self.tick()
             return True
 
-        elif opcode in {Opcode.INC, Opcode.INPUT}:
+        elif opcode in {Opcode.INPUT}:
             if phase == 1:
                 self.data_path.signal_latch_acc()
                 self.tick()
@@ -517,6 +541,17 @@ class ControlUnit:
             self.tick()
             return True
 
+        elif opcode == Opcode.INC:
+            args = instr["arg"]
+            a = args[0]
+            assert a in self.data_path.registers, "unknown register"
+
+            self.data_path.registers[a] += 1
+
+            self.signal_latch_program_counter(sel_next=True)
+            self.tick()
+            return True
+
         elif opcode == Opcode.ADD_STR:
             self.memory.memory[self.program_counter] = self.data_path.data_address
 
@@ -539,11 +574,21 @@ class ControlUnit:
         elif opcode == Opcode.PRINT_STR:
             if phase == 1:
                 addr = instr["arg"]
-                addr_ = self.memory.memory[addr]
+                if type(addr) == list:
+                    addr = int(instr["arg"][0])
+                    length = self.memory.memory[addr]
+
+                    self.data_path.data_address = addr
+
+                    self.tick()
+
+                # addr_ = self.memory.memory[addr]
                 self.tick()
                 return None
             elif phase == 2:
                 addr = instr["arg"]
+                if type(addr) == list:
+                    return
                 # так называемая косвенная относительная адресация
                 addr_ = self.memory.memory[addr]
                 length = self.memory.memory[addr_]
@@ -557,8 +602,12 @@ class ControlUnit:
                 self.tick()
             else:
                 addr = instr["arg"]
-                addr_ = self.memory.memory[addr]
-                length = self.memory.memory[addr_]
+                if type(addr) == list:
+                    addr_ = int(instr["arg"][0])
+                    length = self.memory.memory[addr_]
+                else:
+                    addr_ = self.memory.memory[addr]
+                    length = self.memory.memory[addr_]
 
                 # TODO убрать это дублирование кода
                 phase -= 1
@@ -586,6 +635,53 @@ class ControlUnit:
             self.tick()
             return True
 
+        elif opcode == Opcode.STORE:
+            arg = instr["arg"]
+            print(arg)
+            self.signal_latch_program_counter(sel_next=True)
+            self.tick()
+            return True
+
+        elif opcode == Opcode.EI:
+            self.interruption_enabled = True
+            self.signal_latch_program_counter(sel_next=True)
+            self.tick()
+            return True
+
+        elif opcode == Opcode.DI:
+            self.interruption_enabled = False
+            self.signal_latch_program_counter(sel_next=True)
+            self.tick()
+
+            return True
+        elif opcode == Opcode.IRET:
+            self.handling_interruption = False
+            self.signal_latch_program_counter(sel_next=True)
+            self.tick()
+            # self.interruption_enabled = True
+
+            self.program_counter = 101
+            self.data_path.interruption_controller.interruption = False
+
+            return True
+        else:
+            print(opcode)
+
+    def execute_iret(self):
+        if not self.handling_interruption:
+            return
+
+        # address = self.data_path.signal_read_address_stack()
+        # self.data_path.signal_latch_address_stack_top(address)
+        # self.tick()
+        #
+        # self.data_path.signal_latch_pc(self.data_path.address_stack_top)
+        self.handling_interruption = False
+        self.data_path.interruption_controller.interruption = False
+        self.tick()
+
+        logging.debug("STOP HANDLING INTERRUPTION")
+
     def __repr__(self):
         """Вернуть строковое представление состояния процессора."""
         state_repr = "TICK: {:3} PC: {:3} ADDR: {:3} MEM_OUT: {} ACC: {} rs: {}".format(
@@ -610,7 +706,25 @@ class ControlUnit:
         return "{} \t{}".format(state_repr, instr_repr)
 
 
-def simulation(code, input_tokens, data_memory_size, limit):
+def initiate_interruption(control_unit: ControlUnit, input_tokens: list):
+    if len(input_tokens) != 0:
+        next_token = input_tokens[0]
+        if control_unit.current_tick() > next_token[0]:
+            control_unit.data_path.interruption_controller.generate_interruption(1)
+            if next_token[1]:
+                control_unit.data_path.input_buffer = ord(next_token[1])
+            else:
+                control_unit.data_path.input_buffer = 0
+                for i, el in enumerate(control_unit.memory.memory):
+                    print(el, end=' ')
+                    if i % 10 == 9:
+                        print()
+            return input_tokens[1:]
+    # control_unit.data_path.input_buffer = 0
+    return input_tokens
+
+
+def simulation(code: list, input_tokens: list, data_memory_size: int, limit: int):
     """Подготовка модели и запуск симуляции процессора.
 
     Длительность моделирования ограничена:
@@ -624,7 +738,8 @@ def simulation(code, input_tokens, data_memory_size, limit):
     """
     memory = Memory(data_memory_size, code)
     alu = ALU()
-    data_path = DataPath(alu, memory, input_tokens)
+    # data_path = DataPath(alu, memory, input_tokens)
+    data_path = DataPath(alu, memory)
     control_unit = ControlUnit(memory, data_path)
     instr_counter = 0
 
@@ -632,8 +747,10 @@ def simulation(code, input_tokens, data_memory_size, limit):
     try:
         while instr_counter < limit:
             phase = 1
-            # TODO
-            # control_unit.check_and_handle_interruption()
+            # TODO обдумать
+            input_tokens = initiate_interruption(control_unit, input_tokens)
+            control_unit.check_and_handle_interruption()
+            # if input_tokens and input_tokens[0][0] >= control_unit.program_counter:
 
             while control_unit.decode_and_execute_instruction(phase) is None:
                 phase += 1
@@ -651,39 +768,27 @@ def simulation(code, input_tokens, data_memory_size, limit):
     return "".join(data_path.output_buffer), instr_counter, control_unit.current_tick()
 
 
-def main(code_file, input_file):
+def main(code_file: str, input_file: str):
     """Функция запуска модели процессора. Параметры -- имена файлов с машинным
     кодом и с входными данными для симуляции.
     """
     code = read_code(code_file)
     with open(input_file, encoding="utf-8") as file:
-        input_text = file.read()
-        input_token = []
-        for char in input_text:
-            input_token.append(char)
+        input_text = file.read().strip()
+        if not input_text:
+            input_tokens = []
+        else:
+            input_tokens = eval(input_text)
 
     output, instr_counter, ticks = simulation(
         code,
-        input_tokens=input_token,
+        input_tokens=input_tokens,
         data_memory_size=100,
         limit=10000
     )
 
     print("".join(output))
     print("instr_counter: ", instr_counter, "ticks:", ticks)
-
-
-def initiate_interruption(control_unit, input_tokens):
-    if len(input_tokens) != 0:
-        next_token = input_tokens[0]
-        if control_unit.tick_counter >= next_token[0]:
-            control_unit.data_path.interruption_controller.generate_interruption(1)
-            if next_token[1]:
-                control_unit.data_path.input_buffer = ord(next_token[1])
-            else:
-                control_unit.data_path.input_buffer = 0
-            return input_tokens[1:]
-    return input_tokens
 
 
 if __name__ == "__main__":

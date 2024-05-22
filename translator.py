@@ -7,7 +7,9 @@ from typing import Tuple, Dict, List, Any
 
 from isa import Opcode, Term, write_code
 
+data = []
 SHIFT = 100
+label2str_address = {}
 
 
 def get_meaningful_token(line: str) -> str:
@@ -30,10 +32,13 @@ def translate_stage_1(text: str) -> tuple[
     labels = {}
 
     OPCODES_WITH_OPERAND = [Opcode.PRINT_STR,
-                            Opcode.JZ, Opcode.JNZ, Opcode.JMP, Opcode.DEC]
-    OPCODES_WITH_TWO_OPERANDS = [Opcode.ADD_STR]
+                            Opcode.JZ, Opcode.JNZ, Opcode.JMP,
+                            Opcode.DEC, Opcode.INC]
+    OPCODES_WITH_TWO_OPERANDS = [Opcode.ADD_STR, Opcode.STORE]
     OPCODES_WITH_THREE_OPERANDS = [Opcode.MOV, Opcode.MOD, Opcode.MUL, Opcode.SUB, Opcode.ADD]
     OPCODES_WITH_OPERANDS = OPCODES_WITH_OPERAND + OPCODES_WITH_TWO_OPERANDS + OPCODES_WITH_THREE_OPERANDS
+
+    last_label = None
 
     for line_num, raw_line in enumerate(text.splitlines(), 1):
         token = get_meaningful_token(raw_line)
@@ -45,7 +50,9 @@ def translate_stage_1(text: str) -> tuple[
         if token.endswith(":"):  # токен содержит метку
             label = token.strip(":")
             assert label not in labels, "Redefinition of label: {}".format(label)
-            labels[label] = SHIFT + pc  # TODO use constant!
+            labels[label] = SHIFT + pc
+
+            last_label = label
         elif " " in token:  # токен содержит инструкцию с операндом (отделены пробелом)
             sub_tokens = token.split(maxsplit=1) if token.startswith(Opcode.ADD_STR.value) else token.split()
             assert len(sub_tokens) == 2, "Invalid instruction: {}".format(token)
@@ -54,12 +61,26 @@ def translate_stage_1(text: str) -> tuple[
             opcode = Opcode(mnemonic)
 
             assert opcode in OPCODES_WITH_OPERANDS, \
-                "This instruction doesn't take an argument"
+                f"This instruction ({opcode}) doesn't take an argument"
 
             code.append({"index": pc, "opcode": opcode, "arg": arg, "term": Term(line_num, 0, token)})
+
+            if opcode.value == Opcode.ADD_STR:
+                if last_label is not None:
+                    label2str_address[last_label] = len(data)
+
+                data.append(int(arg[0]))
+                for let in arg[1][1:-1]:
+                    data.append(ord(let))
+
+            last_label = None
         else:  # токен содержит инструкцию без операндов
             opcode = Opcode(token)
             code.append({"index": pc, "opcode": opcode, "term": Term(line_num, 0, token)})
+
+            last_label = None
+            # if opcode.value == Opcode.HALT:
+            #     print(data)
 
     return labels, code
 
@@ -74,14 +95,16 @@ def translate_stage_2(labels, code):
                                                 Opcode.JMP.value,
                                                 Opcode.PRINT_STR.value}:
             label = instruction["arg"]
-            assert label[0] in labels, "Label not defined: " + label
+            if label[0].isdigit():
+                continue
+            assert label[0] in labels, "Label not defined: " + label[0]
             if instruction["opcode"].value in {Opcode.JMP}:
                 instruction["arg"] = labels[label[0]]
             elif instruction["opcode"].value == Opcode.PRINT_STR:
                 # print(label)
                 # print(labels[label[0]])
                 # print(code[labels[label[0]] - SHIFT])
-                instruction["arg"] = labels[label[0]]
+                instruction["arg"] = [label2str_address[label[0]]]
             else:
                 instruction["arg"] = labels[label[0]], label[1]
     return code
@@ -98,9 +121,11 @@ def translate(text: str) -> list:
     """
     labels, code = translate_stage_1(text)
     code = translate_stage_2(labels, code)
+    empty_data_count = SHIFT - len(data)
+    memory = data + empty_data_count * [0] + code
 
     # ruff: noqa: RET504
-    return code
+    return memory
 
 
 def main(source: str, target: str) -> None:

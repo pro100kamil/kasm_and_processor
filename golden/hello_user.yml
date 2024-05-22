@@ -5,7 +5,7 @@ in_source: |-
     add_str 6,'hello '
   hello_end:
     add_str 1,'!'
-    
+
     print_str question
 
   break:
@@ -14,7 +14,7 @@ in_source: |-
     print_str hello_end
     halt
 in_stdin: |-
-  kamil
+  [(0, 'K'), (1, 'A'), (2, 'M'), (3, 'I'), (4, 'L'), (5, '')]
 out_log: |
   DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:   0 MEM_OUT: 0 ACC: 33 rs: 0 	add_str ['19', "'what is your name? '"]  ('add_str 19,'what is your name? ''@2:0)
   DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:  20 MEM_OUT: 0 ACC: 33 rs: 0 	add_str ['6', "'hello '"]  ('add_str 6,'hello ''@4:0)

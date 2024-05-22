@@ -56,8 +56,8 @@ class Opcode(str, Enum):
         - `HALT` -- остановка машины.
     """
 
-    RIGHT = "right"
-    LEFT = "left"
+    RIGHT = "right"  # del
+    LEFT = "left"  # del
     INC = "inc"
     DEC = "dec"
     INPUT = "input"
@@ -79,6 +79,12 @@ class Opcode(str, Enum):
 
     ADD_STR = "add_str"
     PRINT_STR = "print_str"
+
+    EI = "ei"
+    DI = "di"
+    IRET = "iret"
+
+    STORE = "store"
 
     LD = "ld"  # don't use
 
@@ -107,7 +113,7 @@ def write_code(filename, code):
         file.write("[" + ",\n ".join(buf) + "]")
 
 
-def read_code(filename):
+def read_code(filename: str) -> list:
     """Прочесть машинный код из файла.
 
     Так как в файле хранятся не только простейшие типы (`Opcode`, `Term`), мы
@@ -119,12 +125,14 @@ def read_code(filename):
         code = json.loads(file.read())
 
     for instr in code:
+        instr: str
         # Конвертация строки в Opcode
-        instr["opcode"] = Opcode(instr["opcode"])
+        if type(instr) == dict:
+            instr["opcode"] = Opcode(instr["opcode"])
 
-        # Конвертация списка term в класс Term
-        if "term" in instr:
-            assert len(instr["term"]) == 3
-            instr["term"] = Term(instr["term"][0], instr["term"][1], instr["term"][2])
+            # Конвертация списка term в класс Term
+            if "term" in instr:
+                assert len(instr["term"]) == 3
+                instr["term"] = Term(instr["term"][0], instr["term"][1], instr["term"][2])
 
     return code
