@@ -59,6 +59,7 @@ def translate_stage_1(text: str) -> tuple[dict, dict, list, list]:
             assert opcode in OPCODES_WITH_OPERANDS, \
                 f"This instruction ({opcode}) doesn't take an argument"
 
+            # TODO delete add str
             code.append({"index": pc, "opcode": opcode, "arg": arg, "term": Term(line_num, 0, token)})
 
             if opcode.value == Opcode.ADD_STR:
@@ -89,7 +90,7 @@ def translate_stage_2(label2command_address: dict, label2str_address: dict, code
                                                 Opcode.JMP.value,
                                                 Opcode.PRINT_STR.value}:
             label = instruction["arg"]
-            if label[0].isdigit():
+            if label[0].isdigit() or label[0][0] == "r" and label[0][1].isdigit():
                 continue
             assert label[0] in label2command_address, "Label not defined: " + label[0]
             if instruction["opcode"].value in {Opcode.JMP}:
@@ -112,8 +113,12 @@ def translate(text: str) -> list:
     """
     label2command_address, label2str_address, code, data = translate_stage_1(text)
     code = translate_stage_2(label2command_address, label2str_address, code)
+    # нулевая ячейка памяти - вектор прерывания
+    data = data
+    # print(data)
     empty_data_count = SHIFT - len(data)
     memory = data + empty_data_count * [0] + code
+    memory[SHIFT - 1] = label2command_address["int1"]
 
     return memory
 

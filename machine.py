@@ -16,14 +16,14 @@ import sys
 
 from isa import Opcode, read_code
 
+INTERRUPTION_VECTOR_INDEX = 99
+
 
 class Memory:
     """Память фон Неймановская архитектура"""
 
     def __init__(self, data_memory_size: int, code: list):
-        # data_memory_size = 100
         self.shift = data_memory_size
-        # self.memory = [0] * data_memory_size + code
         self.memory = code.copy()
 
 
@@ -43,6 +43,7 @@ class ALU:
 
 
 class InterruptionController:
+    """Контроллер прерываний"""
     interruption: bool = None
     interruption_number: int = None
 
@@ -51,75 +52,20 @@ class InterruptionController:
         self.interruption_number = 0
 
     def generate_interruption(self, number: int) -> None:
-        assert number == 1, f"Interruption controller doesn't invoke interruption-{number}"
+        assert number == 1, f"Unknown interruption number: {number}"
         self.interruption = True
         self.interruption_number = number
 
 
 class DataPath:
-    """Тракт данных (пассивный), включая: ввод/вывод, память и арифметику.
+    """Тракт данных, включая: ввод/вывод, память и арифметику."""
 
-    ```text
-     latch --------->+--------------+  addr   +--------+
-     data            | data_address |---+---->|  data  |
-     addr      +---->+--------------+   |     | memory |
-               |                        |     |        |
-           +-------+                    |     |        |
-    sel -->|  MUX  |         +----------+     |        |
-           +-------+         |                |        |
-            ^     ^          |                |        |
-            |     |          |        data_in |        | data_out
-            |     +---(+1)---+          +---->|        |-----+
-            |                |          |     |        |     |
-            +---------(-1)---+          |  oe |        |     |
-                                        | --->|        |     |
-                                        |     |        |     |
-                                        |  wr |        |     |
-                                        | --->|        |     |
-                                        |     +--------+     |
-                                        |                    v
-                                    +--------+  latch_acc +-----+
-                          sel ----> |  MUX   |  --------->| acc |
-                                    +--------+            +-----+
-                                     ^   ^  ^                |
-                                     |   |  |                +---(==0)---> zero
-                                     |   |  |                |
-                                     |   |  +---(+1)---------+
-                                     |   |                   |
-                                     |   +------(-1)---------+
-                                     |                       |
-            input -------------------+                       +---------> output
-    ```
+    # "Общая память данных."
+    memory: Memory = None
 
-    - data_memory -- однопортовая, поэтому либо читаем, либо пишем.
+    alu: ALU = None
 
-    - input/output -- токенизированная логика ввода-вывода. Не детализируется в
-      рамках модели.
-
-    - input -- чтение может вызвать остановку процесса моделирования, если буфер
-      входных значений закончился.
-
-    Реализованные методы соответствуют сигналам защёлкивания значений:
-
-    - `signal_latch_data_addr` -- защёлкивание адреса в памяти данных;
-    - `signal_latch_acc` -- защёлкивание аккумулятора;
-    - `signal_wr` -- запись в память данных;
-    - `signal_output` -- вывод в порт.
-
-    Сигнал "исполняется" за один такт. Корректность использования сигналов --
-    задача `ControlUnit`.
-    """
-
-    # data_memory_size = None
-    # "Размер памяти данных."
-
-    # data_memory = None
-    # "Память данных. Инициализируется нулевыми значениями."
-    memory = None
-
-    alu = None
-
-    data_address = None
+    data_address: int = None
     "Адрес в памяти данных. Инициализируется нулём."
 
     new_data_address = None
@@ -127,13 +73,10 @@ class DataPath:
     buffer = None
     "Буферный регистр. Инициализируется нулём."
 
-    # acc = None
-    "Аккумулятор. Инициализируется нулём."
+    input_buffer: int = None
+    "Буфер входных данных."
 
-    input_buffer = None
-    "Буфер входных данных. Инициализируется входными данными конструктора."
-
-    output_buffer = None
+    output_buffer: list = None
     "Буфер выходных данных."
 
     registers = {"acc": 0,
@@ -144,17 +87,17 @@ class DataPath:
                  "r3": 0,
                  "r7": 0}
 
+    imml: int = None
+    immr: int = None
+
     interruption_controller: InterruptionController = None
 
     def __init__(self, alu: ALU, memory: Memory):
-        # assert data_memory_size > 0, "Data_memory size should be non-zero"
-        # self.data_memory_size = data_memory_size
-        # self.data_memory = [0] * data_memory_size
         self.memory = memory
         self.alu = alu
-        self.data_address = 29
-        self.new_data_address = 29
-        # self.acc = 0
+        self.data_address = memory.memory.index(0)
+        self.new_data_address = memory.memory.index(0)
+
         self.buffer = 0
 
         self.input_buffer = 0
@@ -339,6 +282,11 @@ class ControlUnit:
             assert "arg" in instr, "internal error"
             self.program_counter = instr["arg"][0]
 
+    def signal_latch_input_register(self, sel_next):
+        """Защёлкнуть новое значение регистра ввода.
+        """
+        pass
+
     def check_and_handle_interruption(self) -> None:
         if not self.interruption_enabled:
             return
@@ -350,7 +298,8 @@ class ControlUnit:
         # во время прерывания не может быть другое прерывание
         self.handling_interruption = True
 
-        self.program_counter = 108
+        self.program_counter = self.memory.memory[INTERRUPTION_VECTOR_INDEX]
+        # self.program_counter = 108
         # self.data_path.signal_latch_address_stack_top(self.data_path.pc)
         # self.tick()
         #
@@ -504,11 +453,15 @@ class ControlUnit:
                 return True
 
         elif opcode == Opcode.MOV:
-            # rn only reg = number
             args = instr["arg"]
+
             assert args[0] in self.data_path.registers, "unknown register"
 
-            self.data_path.registers[args[0]] = int(args[1])
+            if args[1] == "addr":
+                self.data_path.registers[args[0]] = self.data_path.new_data_address
+
+            else:
+                self.data_path.registers[args[0]] = int(args[1])
 
             self.signal_latch_program_counter(sel_next=True)
             self.tick()
@@ -578,6 +531,9 @@ class ControlUnit:
             return True
 
         elif opcode == Opcode.PRINT_STR:
+            arg = instr["arg"][0]
+            if type(arg) == str and arg[0] == "r" and arg[1:].isdigit():
+                instr["arg"] = [self.data_path.registers.get(arg)]
             if phase == 1:
                 addr = instr["arg"]
                 if type(addr) == list:
@@ -652,8 +608,10 @@ class ControlUnit:
             args = instr["arg"]
             a, b = args
             b: str
-            a = int(a)
-
+            if a.isdigit():
+                a = int(a)
+            else:
+                a = self.data_path.registers.get(a)
             if b.isdigit():
                 self.memory.memory[a] = int(b)
             else:
@@ -742,7 +700,6 @@ def initiate_interruption(control_unit: ControlUnit, input_tokens: list):
                 control_unit.data_path.input_buffer = 0
 
             return input_tokens[1:]
-    # control_unit.data_path.input_buffer = None
     return input_tokens
 
 
@@ -769,7 +726,6 @@ def simulation(code: list, input_tokens: list, data_memory_size: int, limit: int
     try:
         while instr_counter < limit:
             phase = 1
-            # TODO обдумать
 
             input_tokens = initiate_interruption(control_unit, input_tokens)
             control_unit.check_and_handle_interruption()
