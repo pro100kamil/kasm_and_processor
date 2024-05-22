@@ -5,67 +5,167 @@ in_source: |-
   halt
 in_stdin: |
 out_log: |
-  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:   0 MEM_OUT: 0 ACC: 0 rs: 0 	add_str ['12', "'hello world!'"]  ('add_str 12,'hello world!''@2:0)
-  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:  13 MEM_OUT: 0 ACC: 0 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:   2 PC: 101 ADDR:  13 MEM_OUT: 0 ACC: 0 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:   3 PC: 101 ADDR:   0 MEM_OUT: 12 ACC: 0 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:   4 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 0 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:   5 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 104 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:  29 MEM_OUT: 0 ACC: 0 rs: 0 	add_str ['12', "'hello world!'"]  ('add_str 12,'hello world!''@2:0) 	0
+  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:  29 MEM_OUT: 0 ACC: 0 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:   3 PC: 101 ADDR:   0 MEM_OUT: 12 ACC: 0 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:   3 PC: 101 ADDR:   0 MEM_OUT: 12 ACC: 0 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:   4 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 0 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:   5 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 104 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: '' << 'h'
-  DEBUG   machine:simulation    TICK:   6 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 104 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:   7 PC: 101 ADDR:   2 MEM_OUT: 101 ACC: 104 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:   8 PC: 101 ADDR:   2 MEM_OUT: 101 ACC: 101 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:   6 PC: 101 ADDR:   1 MEM_OUT: 104 ACC: 104 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:   7 PC: 101 ADDR:   2 MEM_OUT: 101 ACC: 104 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:   8 PC: 101 ADDR:   2 MEM_OUT: 101 ACC: 101 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'h' << 'e'
-  DEBUG   machine:simulation    TICK:   9 PC: 101 ADDR:   2 MEM_OUT: 101 ACC: 101 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  10 PC: 101 ADDR:   3 MEM_OUT: 108 ACC: 101 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  11 PC: 101 ADDR:   3 MEM_OUT: 108 ACC: 108 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:   9 PC: 101 ADDR:   2 MEM_OUT: 101 ACC: 101 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  10 PC: 101 ADDR:   3 MEM_OUT: 108 ACC: 101 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  11 PC: 101 ADDR:   3 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'he' << 'l'
-  DEBUG   machine:simulation    TICK:  12 PC: 101 ADDR:   3 MEM_OUT: 108 ACC: 108 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  13 PC: 101 ADDR:   4 MEM_OUT: 108 ACC: 108 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  14 PC: 101 ADDR:   4 MEM_OUT: 108 ACC: 108 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:  12 PC: 101 ADDR:   3 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  13 PC: 101 ADDR:   4 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  14 PC: 101 ADDR:   4 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'hel' << 'l'
-  DEBUG   machine:simulation    TICK:  15 PC: 101 ADDR:   4 MEM_OUT: 108 ACC: 108 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  16 PC: 101 ADDR:   5 MEM_OUT: 111 ACC: 108 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  17 PC: 101 ADDR:   5 MEM_OUT: 111 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:  15 PC: 101 ADDR:   4 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  16 PC: 101 ADDR:   5 MEM_OUT: 111 ACC: 108 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  17 PC: 101 ADDR:   5 MEM_OUT: 111 ACC: 111 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'hell' << 'o'
-  DEBUG   machine:simulation    TICK:  18 PC: 101 ADDR:   5 MEM_OUT: 111 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  19 PC: 101 ADDR:   6 MEM_OUT: 32 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  20 PC: 101 ADDR:   6 MEM_OUT: 32 ACC: 32 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:  18 PC: 101 ADDR:   5 MEM_OUT: 111 ACC: 111 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  19 PC: 101 ADDR:   6 MEM_OUT: 32 ACC: 111 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  20 PC: 101 ADDR:   6 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'hello' << ' '
-  DEBUG   machine:simulation    TICK:  21 PC: 101 ADDR:   6 MEM_OUT: 32 ACC: 32 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  22 PC: 101 ADDR:   7 MEM_OUT: 119 ACC: 32 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  23 PC: 101 ADDR:   7 MEM_OUT: 119 ACC: 119 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:  21 PC: 101 ADDR:   6 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  22 PC: 101 ADDR:   7 MEM_OUT: 119 ACC: 32 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  23 PC: 101 ADDR:   7 MEM_OUT: 119 ACC: 119 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'hello ' << 'w'
-  DEBUG   machine:simulation    TICK:  24 PC: 101 ADDR:   7 MEM_OUT: 119 ACC: 119 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  25 PC: 101 ADDR:   8 MEM_OUT: 111 ACC: 119 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  26 PC: 101 ADDR:   8 MEM_OUT: 111 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:  24 PC: 101 ADDR:   7 MEM_OUT: 119 ACC: 119 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  25 PC: 101 ADDR:   8 MEM_OUT: 111 ACC: 119 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  26 PC: 101 ADDR:   8 MEM_OUT: 111 ACC: 111 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'hello w' << 'o'
-  DEBUG   machine:simulation    TICK:  27 PC: 101 ADDR:   8 MEM_OUT: 111 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  28 PC: 101 ADDR:   9 MEM_OUT: 114 ACC: 111 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  29 PC: 101 ADDR:   9 MEM_OUT: 114 ACC: 114 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:  27 PC: 101 ADDR:   8 MEM_OUT: 111 ACC: 111 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  28 PC: 101 ADDR:   9 MEM_OUT: 114 ACC: 111 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  29 PC: 101 ADDR:   9 MEM_OUT: 114 ACC: 114 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'hello wo' << 'r'
-  DEBUG   machine:simulation    TICK:  30 PC: 101 ADDR:   9 MEM_OUT: 114 ACC: 114 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  31 PC: 101 ADDR:  10 MEM_OUT: 108 ACC: 114 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  32 PC: 101 ADDR:  10 MEM_OUT: 108 ACC: 108 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:  30 PC: 101 ADDR:   9 MEM_OUT: 114 ACC: 114 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  31 PC: 101 ADDR:  10 MEM_OUT: 108 ACC: 114 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  32 PC: 101 ADDR:  10 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'hello wor' << 'l'
-  DEBUG   machine:simulation    TICK:  33 PC: 101 ADDR:  10 MEM_OUT: 108 ACC: 108 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  34 PC: 101 ADDR:  11 MEM_OUT: 100 ACC: 108 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  35 PC: 101 ADDR:  11 MEM_OUT: 100 ACC: 100 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:  33 PC: 101 ADDR:  10 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  34 PC: 101 ADDR:  11 MEM_OUT: 100 ACC: 108 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  35 PC: 101 ADDR:  11 MEM_OUT: 100 ACC: 100 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'hello worl' << 'd'
-  DEBUG   machine:simulation    TICK:  36 PC: 101 ADDR:  11 MEM_OUT: 100 ACC: 100 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  37 PC: 101 ADDR:  12 MEM_OUT: 33 ACC: 100 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  38 PC: 101 ADDR:  12 MEM_OUT: 33 ACC: 33 rs: 0 	print_str 100  ('print_str hello'@3:0)
+  DEBUG   machine:simulation    TICK:  36 PC: 101 ADDR:  11 MEM_OUT: 100 ACC: 100 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  37 PC: 101 ADDR:  12 MEM_OUT: 33 ACC: 100 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  38 PC: 101 ADDR:  12 MEM_OUT: 33 ACC: 33 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
   DEBUG   machine:signal_output output: 'hello world' << '!'
-  DEBUG   machine:simulation    TICK:  39 PC: 101 ADDR:  12 MEM_OUT: 33 ACC: 33 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  40 PC: 101 ADDR:  13 MEM_OUT: 0 ACC: 33 rs: 0 	print_str 100  ('print_str hello'@3:0)
-  DEBUG   machine:simulation    TICK:  41 PC: 102 ADDR:  13 MEM_OUT: 0 ACC: 33 rs: 0 	halt  ('halt'@4:0)
+  DEBUG   machine:simulation    TICK:  39 PC: 101 ADDR:  12 MEM_OUT: 33 ACC: 33 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  40 PC: 101 ADDR:  13 MEM_OUT: 0 ACC: 33 rs: 0 	print_str [0]  ('print_str hello'@3:0) 	0
+  DEBUG   machine:simulation    TICK:  41 PC: 102 ADDR:  13 MEM_OUT: 0 ACC: 33 rs: 0 	halt  ('halt'@4:0) 	0
   INFO    machine:simulation    output_buffer: 'hello world!'
 out_stdout: |
-  source LoC: 4 code instr: 3
+  source LoC: 4 code instr: 103
   ============================================================
   hello world!
   instr_counter:  2 ticks: 41
 out_code: |-
-  [{"index": 0, "opcode": "add_str", "arg": ["12", "'hello world!'"], "term": [2, 0, "add_str 12,'hello world!'"]},
-   {"index": 1, "opcode": "print_str", "arg": 100, "term": [3, 0, "print_str hello"]},
+  [12,
+   104,
+   101,
+   108,
+   108,
+   111,
+   32,
+   119,
+   111,
+   114,
+   108,
+   100,
+   33,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   {"index": 0, "opcode": "add_str", "arg": ["12", "'hello world!'"], "term": [2, 0, "add_str 12,'hello world!'"]},
+   {"index": 1, "opcode": "print_str", "arg": [0], "term": [3, 0, "print_str hello"]},
    {"index": 2, "opcode": "halt", "term": [4, 0, "halt"]}]

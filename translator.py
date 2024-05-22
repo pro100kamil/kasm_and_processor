@@ -1,15 +1,10 @@
-#!/usr/bin/python3
-"""Транслятор Asm в машинный код.
-"""
+"""Транслятор Asm в машинный код."""
 
 import sys
-from typing import Tuple, Dict, List, Any
 
 from isa import Opcode, Term, write_code
 
-data = []
 SHIFT = 100
-label2str_address = {}
 
 
 def get_meaningful_token(line: str) -> str:
@@ -19,8 +14,7 @@ def get_meaningful_token(line: str) -> str:
     return line.split(";", 1)[0].strip()
 
 
-def translate_stage_1(text: str) -> tuple[
-    dict[str, int], list[dict[str, int | Term | Opcode | Any] | dict[str, int | Term | Opcode]]]:
+def translate_stage_1(text: str) -> tuple[dict, dict, list, list]:
     """Первый проход транслятора. Преобразование текста программы в список
     инструкций и определение адресов меток.
 
@@ -29,12 +23,14 @@ def translate_stage_1(text: str) -> tuple[
     смысловой нагрузки.
     """
     code = []
-    labels = {}
+    label2command_address = {}
+    label2str_address = {}
+    data = []
 
     OPCODES_WITH_OPERAND = [Opcode.PRINT_STR,
-                            Opcode.JZ, Opcode.JNZ, Opcode.JMP,
+                            Opcode.JMP,
                             Opcode.DEC, Opcode.INC]
-    OPCODES_WITH_TWO_OPERANDS = [Opcode.ADD_STR, Opcode.STORE]
+    OPCODES_WITH_TWO_OPERANDS = [Opcode.JZ, Opcode.JNZ, Opcode.ADD_STR, Opcode.STORE]
     OPCODES_WITH_THREE_OPERANDS = [Opcode.MOV, Opcode.MOD, Opcode.MUL, Opcode.SUB, Opcode.ADD]
     OPCODES_WITH_OPERANDS = OPCODES_WITH_OPERAND + OPCODES_WITH_TWO_OPERANDS + OPCODES_WITH_THREE_OPERANDS
 
@@ -49,8 +45,8 @@ def translate_stage_1(text: str) -> tuple[
 
         if token.endswith(":"):  # токен содержит метку
             label = token.strip(":")
-            assert label not in labels, "Redefinition of label: {}".format(label)
-            labels[label] = SHIFT + pc
+            assert label not in label2command_address, "Redefinition of label: {}".format(label)
+            label2command_address[label] = SHIFT + pc
 
             last_label = label
         elif " " in token:  # токен содержит инструкцию с операндом (отделены пробелом)
@@ -79,13 +75,11 @@ def translate_stage_1(text: str) -> tuple[
             code.append({"index": pc, "opcode": opcode, "term": Term(line_num, 0, token)})
 
             last_label = None
-            # if opcode.value == Opcode.HALT:
-            #     print(data)
 
-    return labels, code
+    return label2command_address, label2str_address, code, data
 
 
-def translate_stage_2(labels, code):
+def translate_stage_2(label2command_address: dict, label2str_address: dict, code: list):
     """Второй проход транслятора. В уже определённые инструкции подставляются
     адреса меток."""
     for instruction in code:
@@ -97,16 +91,13 @@ def translate_stage_2(labels, code):
             label = instruction["arg"]
             if label[0].isdigit():
                 continue
-            assert label[0] in labels, "Label not defined: " + label[0]
+            assert label[0] in label2command_address, "Label not defined: " + label[0]
             if instruction["opcode"].value in {Opcode.JMP}:
-                instruction["arg"] = labels[label[0]]
+                instruction["arg"] = label2command_address[label[0]]
             elif instruction["opcode"].value == Opcode.PRINT_STR:
-                # print(label)
-                # print(labels[label[0]])
-                # print(code[labels[label[0]] - SHIFT])
                 instruction["arg"] = [label2str_address[label[0]]]
             else:
-                instruction["arg"] = labels[label[0]], label[1]
+                instruction["arg"] = label2command_address[label[0]], label[1]
     return code
 
 
@@ -119,12 +110,11 @@ def translate(text: str) -> list:
 
     2. Подстановка адресов меток в операнды инструкции.
     """
-    labels, code = translate_stage_1(text)
-    code = translate_stage_2(labels, code)
+    label2command_address, label2str_address, code, data = translate_stage_1(text)
+    code = translate_stage_2(label2command_address, label2str_address, code)
     empty_data_count = SHIFT - len(data)
     memory = data + empty_data_count * [0] + code
 
-    # ruff: noqa: RET504
     return memory
 
 

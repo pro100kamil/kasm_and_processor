@@ -617,12 +617,12 @@ class ControlUnit:
 
                 # TODO убрать это дублирование кода
                 phase -= 1
-                if addr_ == 29:
-                    print("length:", length, addr_)
-                    for i, el in enumerate(self.memory.memory):
-                        print(el, end=' ')
-                        if i % 10 == 9:
-                            print()
+                # if addr_ == 29:
+                #     print("length:", length, addr_)
+                #     for i, el in enumerate(self.memory.memory):
+                #         print(el, end=' ')
+                #         if i % 10 == 9:
+                #             print()
                 for i in range(length):
                     if phase == 3 + 3 * i:
                         self.data_path.signal_latch_acc()
@@ -681,8 +681,10 @@ class ControlUnit:
             self.tick()
             # self.interruption_enabled = True
 
-            self.program_counter = 101
+            self.program_counter = 107
             self.data_path.interruption_controller.interruption = False
+
+            logging.debug("STOP HANDLING INTERRUPTION")
 
             return True
         else:
@@ -730,7 +732,7 @@ class ControlUnit:
 def initiate_interruption(control_unit: ControlUnit, input_tokens: list):
     if not control_unit.handling_interruption and \
             control_unit.interruption_enabled and \
-            len(input_tokens) != 0:
+            len(input_tokens) != 0 and not control_unit.data_path.interruption_controller.interruption:
         next_token = input_tokens[0]
         if control_unit.current_tick() > next_token[0]:
             control_unit.data_path.interruption_controller.generate_interruption(1)
@@ -740,6 +742,7 @@ def initiate_interruption(control_unit: ControlUnit, input_tokens: list):
                 control_unit.data_path.input_buffer = 0
 
             return input_tokens[1:]
+    # control_unit.data_path.input_buffer = None
     return input_tokens
 
 
@@ -770,7 +773,6 @@ def simulation(code: list, input_tokens: list, data_memory_size: int, limit: int
 
             input_tokens = initiate_interruption(control_unit, input_tokens)
             control_unit.check_and_handle_interruption()
-            # if input_tokens and input_tokens[0][0] >= control_unit.program_counter:
 
             while control_unit.decode_and_execute_instruction(phase) is None:
                 phase += 1
