@@ -4,7 +4,7 @@ import sys
 
 from isa import Opcode, Term, write_code
 
-SHIFT = 100
+SHIFT = 100  # именно с этого адреса в памяти лежат инструкции
 
 
 def get_meaningful_token(line: str) -> str:
@@ -17,10 +17,6 @@ def get_meaningful_token(line: str) -> str:
 def translate_stage_1(text: str) -> tuple[dict, dict, list, list]:
     """Первый проход транслятора. Преобразование текста программы в список
     инструкций и определение адресов меток.
-
-    Особенность: транслятор ожидает, что в строке может быть либо 1 метка,
-    либо 1 инструкция. Поэтому: `col` заполняется всегда 0, так как не несёт
-    смысловой нагрузки.
     """
     code = []
     label2command_address = {}
@@ -113,12 +109,12 @@ def translate(text: str) -> list:
     """
     label2command_address, label2str_address, code, data = translate_stage_1(text)
     code = translate_stage_2(label2command_address, label2str_address, code)
-    # нулевая ячейка памяти - вектор прерывания
-    data = data
-    # print(data)
+
     empty_data_count = SHIFT - len(data)
     memory = data + empty_data_count * [0] + code
-    memory[SHIFT - 1] = label2command_address["int1"]
+    if "int1" in label2command_address:
+        # 99я ячейка памяти (последняя ячейка до инструкций) - вектор прерывания
+        memory[SHIFT - 1] = label2command_address["int1"]
 
     return memory
 

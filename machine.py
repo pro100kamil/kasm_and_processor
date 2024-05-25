@@ -1,16 +1,3 @@
-#!/usr/bin/python3
-"""Модель процессора, позволяющая выполнить машинный код полученный из программы
-на языке Brainfuck.
-
-Модель включает в себя три основных компонента:
-
-- `DataPath` -- работа с памятью данных и вводом-выводом.
-
-- `ControlUnit` -- работа с памятью команд и их интерпретация.
-
-- и набор вспомогательных функций: `simulation`, `main`.
-"""
-
 import logging
 import sys
 
@@ -29,17 +16,22 @@ class Memory:
 
 class ALU:
     """Арифметико-логическое устройство"""
+    operations = {
+        Opcode.INC: lambda l, r: l + 1,
+        Opcode.DEC: lambda l, r: l - 1,
+        Opcode.MOV: lambda l, r: l,
+        Opcode.ADD: lambda l, r: l + r,
+        Opcode.SUB: lambda l, r: l - r,
+        Opcode.MOD: lambda l, r: l % r,
+        Opcode.MUL: lambda l, r: l * r
+    }
+    zero = None
+    res = None
 
-    def calc(self, sel: Opcode, l, r):
-        return {
-            Opcode.INC: l + 1,
-            Opcode.DEC: l - 1,
-            Opcode.MOV: l,
-            Opcode.ADD: l + r,
-            Opcode.SUB: l - r,
-            Opcode.MOD: l % r if r != 0 else None,
-            Opcode.MUL: l * r,
-        }.get(sel.value)
+    def calc(self, op: Opcode, l: int, r: int) -> int:
+        self.res = self.operations.get(op)(l, r)
+        self.zero = self.res == 0
+        return self.res
 
 
 class InterruptionController:
@@ -60,35 +52,37 @@ class InterruptionController:
 class DataPath:
     """Тракт данных, включая: ввод/вывод, память и арифметику."""
 
-    # "Общая память данных."
     memory: Memory = None
 
     alu: ALU = None
 
     data_address: int = None
-    "Адрес в памяти данных. Инициализируется нулём."
 
-    new_data_address = None
+    new_data_address: int = None
 
-    buffer = None
-    "Буферный регистр. Инициализируется нулём."
+    buffer: int = None
 
     input_buffer: int = None
-    "Буфер входных данных."
 
     output_buffer: list = None
-    "Буфер выходных данных."
 
     registers = {"acc": 0,
-                 "rc": 0,
-                 "rs": 0,
                  "r1": 0,
                  "r2": 0,
                  "r3": 0,
+                 "r4": 0,
+                 "rc": 0,  # "r5": 0,
+                 "rs": 0,  # "r6": 0,
                  "r7": 0}
 
     imml: int = None
     immr: int = None
+
+    alu_l_variants = ['imml'] + list(registers)
+    alu_r_variants = ['0', 'immr'] + list(registers)
+
+    alu_l_value: int = None
+    alu_r_value: int = None
 
     interruption_controller: InterruptionController = None
 
@@ -132,8 +126,26 @@ class DataPath:
         """
         self.registers["acc"] = self.memory.memory[self.data_address]
 
-    def calc(self, sel, l, r):
-        res = self.alu.calc(sel, l, r)
+    def signal_latch_r(self, register_name: str, value):
+        # для r1, ..., r7 (регистров общего назначения)
+        self.registers[register_name] = value
+
+    def signal_alu_l(self, sel: str):
+        if sel == 'imml':
+            self.alu_l_value = self.imml
+        else:
+            self.alu_l_value = self.registers.get(sel)
+
+    def signal_alu_r(self, sel: str):
+        if sel == '0':
+            self.alu_r_value = 0
+        elif sel == 'immr':
+            self.alu_r_value = self.immr
+        else:
+            self.alu_r_value = self.registers.get(sel)
+
+    def signal_alu_op(self, sel: Opcode):
+        res = self.alu.calc(sel, self.alu_l_value, self.alu_r_value)
         assert res is not None, "unknown instruction"
         return res
 
@@ -195,54 +207,15 @@ class DataPath:
 class ControlUnit:
     """Блок управления процессора. Выполняет декодирование инструкций и
     управляет состоянием модели процессора, включая обработку данных (DataPath).
-
-    Согласно варианту, любая инструкция может быть закодирована в одно слово.
-    Следовательно, индекс памяти команд эквивалентен номеру инструкции.
-
-    ```text
-    +------------------(+1)-------+
-    |                             |
-    |   +-----+                   |
-    +-->|     |     +---------+   |    +---------+
-        | MUX |---->| program |---+--->| program |
-    +-->|     |     | counter |        | memory  |
-    |   +-----+     +---------+        +---------+
-    |      ^                               |
-    |      | sel_next                      | current instruction
-    |      |                               |
-    +---------------(select-arg)-----------+
-           |                               |      +---------+
-           |                               |      |  step   |
-           |                               |  +---| counter |
-           |                               |  |   +---------+
-           |                               v  v        ^
-           |                       +-------------+     |
-           +-----------------------| instruction |-----+
-                                   |   decoder   |
-                                   |             |<-------+
-                                   +-------------+        |
-                                           |              |
-                                           | signals      |
-                                           v              |
-                                     +----------+  zero   |
-                                     |          |---------+
-                                     | DataPath |
-                      input -------->|          |----------> output
-                                     +----------+
-    ```
-
     """
 
-    # program = None
-    # "Память команд."
-
-    program_counter = None
+    program_counter: int = None
     "Счётчик команд. Инициализируется сдвигом, потому что данные лежат до команд."
 
-    data_path = None
+    data_path: DataPath = None
     "Блок обработки данных."
 
-    _tick = None
+    _tick: int = None
     "Текущее модельное время процессора (в тактах). Инициализируется нулём."
 
     handling_interruption: bool = None
@@ -252,7 +225,6 @@ class ControlUnit:
     "Разрешены ли прерывания"
 
     def __init__(self, memory: Memory, data_path: DataPath):
-        # self.program = program
         self.memory = memory
         self.program_counter = memory.shift
         self.data_path = data_path
@@ -292,27 +264,13 @@ class ControlUnit:
             return
         if not self.data_path.interruption_controller.interruption:
             return
+        # во время прерывания не может быть другое прерывание
         if self.handling_interruption:
             return
 
-        # во время прерывания не может быть другое прерывание
         self.handling_interruption = True
 
         self.program_counter = self.memory.memory[INTERRUPTION_VECTOR_INDEX]
-        # self.program_counter = 108
-        # self.data_path.signal_latch_address_stack_top(self.data_path.pc)
-        # self.tick()
-        #
-        # self.data_path.signal_write_address_stack(self.data_path.address_stack_top)
-        # self.data_path.signal_latch_pc(self.data_path.interruption_controller.interruption_number)
-        # self.tick()
-        #
-        # address = self.data_path.signal_read_memory(self.data_path.pc)
-        # self.data_path.signal_latch_data_stack_top_1(address)
-        # self.tick()
-        #
-        # self.data_path.signal_latch_pc(self.data_path.data_stack_top_1)
-        # self.tick()
 
         logging.debug("START HANDLING INTERRUPTION")
         return
@@ -322,6 +280,7 @@ class ControlUnit:
         случае успеха -- вернуть `True`, чтобы перейти к следующей инструкции.
         """
         if opcode is Opcode.HALT:
+            print(self.memory.memory)
             raise StopIteration()
 
         if opcode is Opcode.JMP:
@@ -337,11 +296,13 @@ class ControlUnit:
             # self.data_path.registers["acc"] = self.data_path.registers["acc"]
 
             # if phase == 1:
+            #     self.data_path.registers["acc"] = self.data_path.registers.get(reg)
+            #
             #     self.data_path.signal_latch_acc()
             #     self.tick()
             #     return None
             # elif phase == 2:
-            #     if self.data_path.zero():
+            #     if self.data_path.registers["acc"] == 0:
             #         self.signal_latch_program_counter(sel_next=False)
             #     else:
             #         self.signal_latch_program_counter(sel_next=True)
@@ -474,16 +435,22 @@ class ControlUnit:
             assert a in self.data_path.registers, "unknown register"
 
             if b.isdigit():
-                b = int(b)
+                self.data_path.imml = int(b)
+                self.data_path.signal_alu_l("imml")
             else:
-                b = self.data_path.registers.get(b)
+                self.data_path.signal_alu_l(b)
 
             if c.isdigit():
-                c = int(c)
+                self.data_path.immr = int(c)
+                self.data_path.signal_alu_r("immr")
             else:
-                c = self.data_path.registers.get(c)
+                self.data_path.signal_alu_r(c)
 
-            self.data_path.registers[a] = self.data_path.calc(instr["opcode"], b, c)
+            # self.data_path.registers[a] = self.data_path.calc(instr["opcode"], b, c)
+            self.data_path.signal_alu_op(instr["opcode"])
+
+            value = self.data_path.alu.res
+            self.data_path.signal_latch_r(a, value)
 
             self.signal_latch_program_counter(sel_next=True)
             self.tick()
@@ -665,13 +632,16 @@ class ControlUnit:
 
     def __repr__(self):
         """Вернуть строковое представление состояния процессора."""
-        state_repr = "TICK: {:3} PC: {:3} ADDR: {:3} MEM_OUT: {} ACC: {} rs: {}".format(
+        state_repr = "TICK: {:3} PC: {:3} ADDR: {:3} MEM_OUT: {} ACC: {} rs: {} r1: {} r2: {} r3: {}".format(
             self._tick,
             self.program_counter,
             self.data_path.data_address,
             self.memory.memory[self.data_path.data_address],
             self.data_path.registers.get("acc"),
             self.data_path.registers.get("rs"),
+            self.data_path.registers.get("r1"),
+            self.data_path.registers.get("r2"),
+            self.data_path.registers.get("r3"),
         )
         instr = self.memory.memory[self.program_counter]
         opcode = instr["opcode"]
