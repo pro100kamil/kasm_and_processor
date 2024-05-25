@@ -4,8 +4,7 @@ from enum import Enum
 
 
 class Opcode(str, Enum):
-    """Opcode для инструкций.
-    """
+    """Opcode для инструкций."""
 
     INC = "inc"
     DEC = "dec"
@@ -56,7 +55,6 @@ class Term(namedtuple("Term", "line pos symbol")):
 def write_code(filename, code):
     """Записать машинный код в файл."""
     with open(filename, "w", encoding="utf-8") as file:
-
         buf = []
         for instr in code:
             buf.append(json.dumps(instr))

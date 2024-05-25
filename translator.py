@@ -23,9 +23,7 @@ def translate_stage_1(text: str) -> tuple[dict, dict, list, list]:
     label2str_address = {}
     data = []
 
-    OPCODES_WITH_OPERAND = [Opcode.PRINT_STR,
-                            Opcode.JMP,
-                            Opcode.DEC, Opcode.INC]
+    OPCODES_WITH_OPERAND = [Opcode.PRINT_STR, Opcode.JMP, Opcode.DEC, Opcode.INC]
     OPCODES_WITH_TWO_OPERANDS = [Opcode.JZ, Opcode.JNZ, Opcode.ADD_STR, Opcode.STORE]
     OPCODES_WITH_THREE_OPERANDS = [Opcode.MOV, Opcode.MOD, Opcode.MUL, Opcode.SUB, Opcode.ADD]
     OPCODES_WITH_OPERANDS = OPCODES_WITH_OPERAND + OPCODES_WITH_TWO_OPERANDS + OPCODES_WITH_THREE_OPERANDS
@@ -49,11 +47,10 @@ def translate_stage_1(text: str) -> tuple[dict, dict, list, list]:
             sub_tokens = token.split(maxsplit=1) if token.startswith(Opcode.ADD_STR.value) else token.split()
             assert len(sub_tokens) == 2, "Invalid instruction: {}".format(token)
             mnemonic, arg = sub_tokens
-            arg = arg.split(',')
+            arg = arg.split(",")
             opcode = Opcode(mnemonic)
 
-            assert opcode in OPCODES_WITH_OPERANDS, \
-                f"This instruction ({opcode}) doesn't take an argument"
+            assert opcode in OPCODES_WITH_OPERANDS, f"This instruction ({opcode}) doesn't take an argument"
 
             # TODO delete add str
             code.append({"index": pc, "opcode": opcode, "arg": arg, "term": Term(line_num, 0, token)})
@@ -80,11 +77,12 @@ def translate_stage_2(label2command_address: dict, label2str_address: dict, code
     """Второй проход транслятора. В уже определённые инструкции подставляются
     адреса меток."""
     for instruction in code:
-        if "arg" in instruction and \
-                instruction["opcode"].value in {Opcode.JZ.value,
-                                                Opcode.JNZ.value,
-                                                Opcode.JMP.value,
-                                                Opcode.PRINT_STR.value}:
+        if "arg" in instruction and instruction["opcode"].value in {
+            Opcode.JZ.value,
+            Opcode.JNZ.value,
+            Opcode.JMP.value,
+            Opcode.PRINT_STR.value,
+        }:
             label = instruction["arg"]
             if label[0].isdigit() or label[0][0] == "r" and label[0][1].isdigit():
                 continue
