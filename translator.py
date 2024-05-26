@@ -25,7 +25,7 @@ def translate_stage_1(text: str) -> tuple[dict, dict, list, list]:
     data = []
 
     opcodes_with_operand = [Opcode.PRINT_STR, Opcode.JMP, Opcode.DEC, Opcode.INC,
-                            Opcode.PRINT_CHAR]
+                            Opcode.PRINT_CHAR, Opcode.CALL]
     opcodes_with_two_operands = [Opcode.JZ, Opcode.JNZ, Opcode.ADD_STR, Opcode.STORE]
     opcodes_with_three_operands = [Opcode.MOV, Opcode.MOD, Opcode.MUL, Opcode.SUB, Opcode.ADD]
     opcodes_with_operands = opcodes_with_operand + opcodes_with_two_operands + opcodes_with_three_operands
@@ -83,13 +83,14 @@ def translate_stage_2(label2command_address: dict, label2str_address: dict, code
             Opcode.JZ.value,
             Opcode.JNZ.value,
             Opcode.JMP.value,
-            Opcode.PRINT_STR.value
+            Opcode.PRINT_STR.value,
+            Opcode.CALL.value
         }:
             label = instruction["arg"]
             if label[0].isdigit() or label[0][0] == "r" and label[0][1].isdigit():
                 continue
             assert label[0] in label2command_address, "Label not defined: " + label[0]
-            if instruction["opcode"].value in {Opcode.JMP}:
+            if instruction["opcode"].value in {Opcode.JMP, Opcode.CALL}:
                 instruction["arg"] = label2command_address[label[0]]
             elif instruction["opcode"].value == Opcode.PRINT_STR:
                 instruction["arg"] = [label2str_address[label[0]]]
@@ -131,7 +132,7 @@ def main(source: str, target: str) -> None:
     code = translate(source)
 
     write_code(target, code)
-    print("source LoC:", len(source.split("\n")), "code instr:", len(code))
+    print("source LoC:", len(source.split("\n")), "code instr:", len(code) - SHIFT)
 
 
 if __name__ == "__main__":

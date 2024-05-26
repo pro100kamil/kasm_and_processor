@@ -40,6 +40,9 @@ class Opcode(str, Enum):
 
     PRINT_CHAR = "print_char"
 
+    CALL = "call"
+    RET = "ret"
+
     def __str__(self):
         """Переопределение стандартного поведения `__str__` для `Enum`: вместо
         `Opcode.INC` вернуть `increment`.

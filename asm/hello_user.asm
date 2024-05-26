@@ -5,10 +5,12 @@ hello_start:
 hello_end:
     add_str 1,'!'
 
-print_str question
+mov r1,19           ; length
+mov r2,question     ; beginning
+call print_str
 
-mov r1,0  ;length
-mov r2,addr ;start
+mov r3,0            ; length of name
+mov r4,addr         ; beginning of name
 ei
 loop:
     jmp loop
@@ -18,14 +20,34 @@ int1:
     right
     input
     jz break,acc
-    inc r1
+    inc r3
     ei
     iret
 
 break:
-    store r2,r1
+    store r4,r3
 
-    print_str hello_start
-    print_str r2
-    print_str hello_end
+    mov r1,6               ; length
+    mov r2,hello_start     ; beginning
+    call print_str
+
+    mov r1,r3
+    mov r2,r4
+    call print_str
+
+    mov r1,1
+    mov r2,hello_end
+    call print_str
     halt
+
+
+print_str:
+    loop_print_str:
+        jz break_print_str,r1
+        inc r2
+        print_char r2
+
+        dec r1
+        jmp loop_print_str
+    break_print_str:
+        ret
