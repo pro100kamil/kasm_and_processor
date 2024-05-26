@@ -38,6 +38,8 @@ class Opcode(str, Enum):
 
     LD = "ld"  # don't use
 
+    PRINT_CHAR = "print_char"
+
     def __str__(self):
         """Переопределение стандартного поведения `__str__` для `Enum`: вместо
         `Opcode.INC` вернуть `increment`.
@@ -73,9 +75,8 @@ def read_code(filename: str) -> list:
         code = json.loads(file.read())
 
     for instr in code:
-        instr: str
         # Конвертация строки в Opcode
-        if type(instr) == dict:
+        if isinstance(instr, dict):
             instr["opcode"] = Opcode(instr["opcode"])
 
             # Конвертация списка term в класс Term

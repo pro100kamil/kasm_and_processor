@@ -1,4 +1,5 @@
 """Транслятор Asm в машинный код."""
+from __future__ import annotations
 
 import sys
 
@@ -23,10 +24,11 @@ def translate_stage_1(text: str) -> tuple[dict, dict, list, list]:
     label2str_address = {}
     data = []
 
-    OPCODES_WITH_OPERAND = [Opcode.PRINT_STR, Opcode.JMP, Opcode.DEC, Opcode.INC]
-    OPCODES_WITH_TWO_OPERANDS = [Opcode.JZ, Opcode.JNZ, Opcode.ADD_STR, Opcode.STORE]
-    OPCODES_WITH_THREE_OPERANDS = [Opcode.MOV, Opcode.MOD, Opcode.MUL, Opcode.SUB, Opcode.ADD]
-    OPCODES_WITH_OPERANDS = OPCODES_WITH_OPERAND + OPCODES_WITH_TWO_OPERANDS + OPCODES_WITH_THREE_OPERANDS
+    opcodes_with_operand = [Opcode.PRINT_STR, Opcode.JMP, Opcode.DEC, Opcode.INC,
+                            Opcode.PRINT_CHAR]
+    opcodes_with_two_operands = [Opcode.JZ, Opcode.JNZ, Opcode.ADD_STR, Opcode.STORE]
+    opcodes_with_three_operands = [Opcode.MOV, Opcode.MOD, Opcode.MUL, Opcode.SUB, Opcode.ADD]
+    opcodes_with_operands = opcodes_with_operand + opcodes_with_two_operands + opcodes_with_three_operands
 
     last_label = None
 
@@ -50,14 +52,14 @@ def translate_stage_1(text: str) -> tuple[dict, dict, list, list]:
             arg = arg.split(",")
             opcode = Opcode(mnemonic)
 
-            assert opcode in OPCODES_WITH_OPERANDS, f"This instruction ({opcode}) doesn't take an argument"
+            assert opcode in opcodes_with_operands, f"This instruction ({opcode}) doesn't take an argument"
 
             # TODO delete add str
             code.append({"index": pc, "opcode": opcode, "arg": arg, "term": Term(line_num, 0, token)})
 
             if opcode.value == Opcode.ADD_STR:
-                if last_label is not None:
-                    label2str_address[last_label] = len(data)
+                assert last_label is not None, "Перед add_str должна идти метка"
+                label2str_address[last_label] = len(data)
 
                 data.append(int(arg[0]))
                 for let in arg[1][1:-1]:
@@ -81,7 +83,7 @@ def translate_stage_2(label2command_address: dict, label2str_address: dict, code
             Opcode.JZ.value,
             Opcode.JNZ.value,
             Opcode.JMP.value,
-            Opcode.PRINT_STR.value,
+            Opcode.PRINT_STR.value
         }:
             label = instruction["arg"]
             if label[0].isdigit() or label[0][0] == "r" and label[0][1].isdigit():
@@ -93,6 +95,10 @@ def translate_stage_2(label2command_address: dict, label2str_address: dict, code
                 instruction["arg"] = [label2str_address[label[0]]]
             else:
                 instruction["arg"] = label2command_address[label[0]], label[1]
+        elif "arg" in instruction and instruction["opcode"].value == Opcode.MOV \
+                and instruction["arg"][1] in label2str_address:
+            args = instruction["arg"]
+            instruction["arg"] = [args[0], str(label2str_address[args[1]])]
     return code
 
 

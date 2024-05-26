@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import logging
 import sys
+from typing import ClassVar
 
+from exceptions import UnknownCommandError
 from isa import Opcode, read_code
 
 INTERRUPTION_VECTOR_INDEX = 99
@@ -17,20 +21,20 @@ class Memory:
 class ALU:
     """Арифметико-логическое устройство"""
 
-    operations = {
-        Opcode.INC: lambda l, r: l + 1,
-        Opcode.DEC: lambda l, r: l - 1,
-        Opcode.MOV: lambda l, r: l,
-        Opcode.ADD: lambda l, r: l + r,
-        Opcode.SUB: lambda l, r: l - r,
-        Opcode.MOD: lambda l, r: l % r,
-        Opcode.MUL: lambda l, r: l * r,
+    operations: ClassVar[dict] = {
+        Opcode.INC: lambda left, right: left + 1,
+        Opcode.DEC: lambda left, right: left - 1,
+        Opcode.MOV: lambda left, right: left,
+        Opcode.ADD: lambda left, right: left + right,
+        Opcode.SUB: lambda left, right: left - right,
+        Opcode.MOD: lambda left, right: left % right,
+        Opcode.MUL: lambda left, right: left * right,
     }
     zero = None
     res = None
 
-    def calc(self, op: Opcode, l: int, r: int) -> int:
-        self.res = self.operations.get(op)(l, r)
+    def calc(self, op: Opcode, left: int, right: int) -> int:
+        self.res = self.operations.get(op)(left, right)
         self.zero = self.res == 0
         return self.res
 
@@ -72,7 +76,7 @@ class DataPath:
 
     output_buffer: list = None
 
-    registers = {
+    registers: ClassVar[dict[str, int]] = {
         "acc": 0,
         "r1": 0,
         "r2": 0,
@@ -85,9 +89,6 @@ class DataPath:
 
     imml: int = None
     immr: int = None
-
-    alu_l_variants = ["imml"] + list(registers)
-    alu_r_variants = ["0", "immr"] + list(registers)
 
     alu_l_value: int = None
     alu_r_value: int = None
@@ -119,9 +120,6 @@ class DataPath:
         if sel_next:
             self.program_counter += 1
         else:
-            # instr = self.memory.memory[self.program_counter]
-            # assert "arg" in instr, "internal error"
-            # self.program_counter = instr["arg"][0]
             self.program_counter = self.data_register
 
     def signal_latch_input_register(self, value):
@@ -292,8 +290,6 @@ class ControlUnit:
         случае успеха -- вернуть `True`, чтобы перейти к следующей инструкции.
         """
         if opcode is Opcode.HALT:
-            # MEMORY_PRINT
-            # print(self.memory.memory)
             raise StopIteration()
 
         if opcode is Opcode.JMP:
@@ -307,52 +303,180 @@ class ControlUnit:
             return True
 
         if opcode is Opcode.JZ:
-            addr, reg = instr["arg"]
-            # в 2 такта
-            if phase == 1:
-                self.data_path.signal_alu_l(reg)
-                self.data_path.signal_alu_r("0")
-
-                # выполняется сложение с нулём, чтобы потом проверить результат на zero_flag
-                self.data_path.signal_alu_op(Opcode.ADD)
-
-                self.tick()
-                return None
-
-            else:
-                if self.data_path.zero():
-                    self.data_path.signal_latch_data_register(addr)
-                    self.data_path.signal_latch_program_counter(sel_next=False)
-                else:
-                    self.data_path.signal_latch_program_counter(sel_next=True)
-                self.tick()
-
-                return True
+            return self.execute_jz(instr, phase)
 
         if opcode is Opcode.JNZ:
-            addr, reg = instr["arg"]
-            # в 2 такта
-            if phase == 1:
-                self.data_path.signal_alu_l(reg)
-                self.data_path.signal_alu_r("0")
-
-                # выполняется сложение с нулём, чтобы потом проверить результат на zero_flag
-                self.data_path.signal_alu_op(Opcode.ADD)
-
-                self.tick()
-                return None
-
-            else:
-                if not self.data_path.zero():
-                    self.data_path.signal_latch_data_register(addr)
-                    self.data_path.signal_latch_program_counter(sel_next=False)
-                else:
-                    self.data_path.signal_latch_program_counter(sel_next=True)
-                self.tick()
-
-                return True
+            return self.execute_jnz(instr, phase)
 
         return False   # чтобы понимать, что текущая инструкция не управляет потоком выполнения
+
+    def execute_jz(self, instr, phase):
+        addr, reg = instr["arg"]
+        # в 2 такта
+        if phase == 1:
+            self.data_path.signal_alu_l(reg)
+            self.data_path.signal_alu_r("0")
+
+            # выполняется сложение с нулём, чтобы потом проверить результат на zero_flag
+            self.data_path.signal_alu_op(Opcode.ADD)
+
+            self.tick()
+            return None
+
+        if self.data_path.zero():
+            self.data_path.signal_latch_data_register(addr)
+            self.data_path.signal_latch_program_counter(sel_next=False)
+        else:
+            self.data_path.signal_latch_program_counter(sel_next=True)
+        self.tick()
+
+        return True
+
+    def execute_jnz(self, instr, phase):
+        addr, reg = instr["arg"]
+        # в 2 такта
+        if phase == 1:
+            self.data_path.signal_alu_l(reg)
+            self.data_path.signal_alu_r("0")
+
+            # выполняется сложение с нулём, чтобы потом проверить результат на zero_flag
+            self.data_path.signal_alu_op(Opcode.ADD)
+
+            self.tick()
+            return None
+
+        if not self.data_path.zero():
+            self.data_path.signal_latch_data_register(addr)
+            self.data_path.signal_latch_program_counter(sel_next=False)
+        else:
+            self.data_path.signal_latch_program_counter(sel_next=True)
+        self.tick()
+
+        return True
+
+    def execute_print(self, phase):
+        if phase == 1:
+            self.data_path.signal_latch_acc()
+            self.tick()
+            return None
+
+        self.data_path.signal_output()
+        self.data_path.signal_latch_program_counter(sel_next=True)
+        self.tick()
+        return True
+
+    def execute_binary_operation(self, instr, phase):
+        args: list[str]
+        args = instr["arg"]
+        a, b, c = args
+        assert a in self.data_path.registers, "unknown register"
+
+        if b.isdigit():
+            self.data_path.imml = int(b)
+            self.data_path.signal_alu_l("imml")
+        else:
+            self.data_path.signal_alu_l(b)
+
+        if c.isdigit():
+            self.data_path.immr = int(c)
+            self.data_path.signal_alu_r("immr")
+        else:
+            self.data_path.signal_alu_r(c)
+
+        self.data_path.signal_alu_op(instr["opcode"])
+
+        value = self.data_path.alu.res
+        self.data_path.signal_latch_r(a, value)
+
+        self.data_path.signal_latch_program_counter(sel_next=True)
+        self.tick()
+        return True
+
+    def execute_mov(self, instr):
+        args = instr["arg"]
+        a, b = args
+        assert a in self.data_path.registers, "unknown register"
+
+        if b.isdigit():
+            self.data_path.imml = int(b)
+            self.data_path.signal_alu_l("imml")
+        elif b == "addr":
+            self.data_path.imml = self.data_path.new_data_address
+            self.data_path.signal_alu_l("imml")
+        else:  # register
+            self.data_path.signal_alu_l(b)
+
+        self.data_path.signal_alu_r("0")  # сложение с нулём
+
+        self.data_path.signal_alu_op(Opcode.ADD)
+
+        self.data_path.signal_latch_r(a, self.data_path.alu.res)
+
+        self.data_path.signal_latch_program_counter(sel_next=True)
+        self.tick()
+        return True
+
+    def execute_print_str(self, instr, phase):
+        arg = instr["arg"][0]
+        if isinstance(arg, str) and arg[0] == "r" and arg[1:].isdigit():
+            instr["arg"] = [self.data_path.registers.get(arg)]
+        if phase == 1:
+            addr = instr["arg"]
+            if isinstance(addr, list):
+                addr = int(instr["arg"][0])
+
+                self.data_path.data_address = addr
+
+                self.tick()
+
+            self.tick()
+            return None
+        if phase == 2:
+            addr = instr["arg"]
+            if isinstance(addr, list):
+                return None
+            # так называемая косвенная относительная адресация
+            addr_ = self.memory.memory[addr]
+
+            self.data_path.data_address = addr_
+
+            self.tick()
+
+            return None
+        if phase == 3:
+            self.data_path.data_address += 1
+
+            self.tick()
+            return None
+        if phase > 3:
+            addr = instr["arg"]
+            if isinstance(addr, list):
+                addr_ = int(instr["arg"][0])
+                length = self.memory.memory[addr_]
+            else:
+                addr_ = self.memory.memory[addr]
+                length = self.memory.memory[addr_]
+
+            # TODO убрать это дублирование кода
+            phase -= 1
+
+            for i in range(length):
+                if phase == 3 + 3 * i:
+                    self.data_path.signal_latch_acc()
+                    self.tick()
+                    return None
+                if phase == 3 + 3 * i + 1:
+                    self.data_path.signal_output()
+                    self.tick()
+                    return None
+                if phase == 3 + 3 * i + 2:
+                    self.data_path.data_address += 1
+                    self.tick()
+                    return None
+
+            self.data_path.signal_latch_program_counter(sel_next=True)
+            self.tick()
+            return True
 
     def decode_and_execute_instruction(self, phase):
         """Основной цикл процессора. Декодирует и выполняет инструкцию.
@@ -373,7 +497,7 @@ class ControlUnit:
         `decode_and_execute_control_flow_instruction`.
         """
         instr = self.memory.memory[self.data_path.program_counter]
-        # logging.debug("%s", instr)
+
         opcode = instr["opcode"]
 
         res = self.decode_and_execute_control_flow_instruction(instr, opcode, phase)
@@ -388,75 +512,20 @@ class ControlUnit:
             self.tick()
             return True
 
-        elif opcode == Opcode.INPUT:
+        if opcode == Opcode.INPUT:
             self.data_path.signal_wr(opcode.value)
             self.data_path.signal_latch_program_counter(sel_next=True)
             self.tick()
 
             return True
 
-        elif opcode in {Opcode.INPUT}:
-            if phase == 1:
-                self.data_path.signal_latch_acc()
-                self.tick()
-                return None
-            elif phase == 2:
-                self.data_path.signal_wr(opcode.value)
-                self.data_path.signal_latch_program_counter(sel_next=True)
-                self.tick()
-                return True
+        if opcode is Opcode.PRINT:
+            return self.execute_print(phase)
 
-            # if phase == 1:
-            #     self.data_path.signal_latch_acc()
-            #     self.tick()
-            #     return None
-            # elif phase == 2:
-            #     self.data_path.buffer = instr["arg"]
-            #
-            #     self.data_path.signal_wr(opcode.value)
-            #     self.signal_latch_program_counter(sel_next=True)
-            #     self.tick()
-            #     return True
+        if opcode in {Opcode.MOD, Opcode.MUL, Opcode.ADD, Opcode.SUB}:
+            return self.execute_binary_operation(instr, phase)
 
-        elif opcode is Opcode.PRINT:
-            if phase == 1:
-                self.data_path.signal_latch_acc()
-                self.tick()
-                return None
-            elif phase == 2:
-                self.data_path.signal_output()
-                self.data_path.signal_latch_program_counter(sel_next=True)
-                self.tick()
-                return True
-
-        elif opcode in {Opcode.MOD, Opcode.MUL, Opcode.ADD, Opcode.SUB}:
-            args: list[str]
-            args = instr["arg"]
-            a, b, c = args
-            assert a in self.data_path.registers, "unknown register"
-
-            if b.isdigit():
-                self.data_path.imml = int(b)
-                self.data_path.signal_alu_l("imml")
-            else:
-                self.data_path.signal_alu_l(b)
-
-            if c.isdigit():
-                self.data_path.immr = int(c)
-                self.data_path.signal_alu_r("immr")
-            else:
-                self.data_path.signal_alu_r(c)
-
-            self.data_path.signal_alu_op(instr["opcode"])
-
-            value = self.data_path.alu.res
-            self.data_path.signal_latch_r(a, value)
-
-            self.data_path.signal_latch_program_counter(sel_next=True)
-            self.tick()
-            return True
-
-        elif opcode in {Opcode.DEC, Opcode.INC}:
+        if opcode in {Opcode.DEC, Opcode.INC}:
             args = instr["arg"]
             a = args[0]
             assert a in self.data_path.registers, "unknown register"
@@ -472,117 +541,34 @@ class ControlUnit:
             self.data_path.signal_latch_program_counter(sel_next=True)
             self.tick()
             return True
-        elif opcode == Opcode.MOV:
-            args = instr["arg"]
-            a, b = args
-            assert a in self.data_path.registers, "unknown register"
 
-            if b.isdigit():
-                self.data_path.imml = int(b)
-                self.data_path.signal_alu_l("imml")
-            elif b == "addr":
-                self.data_path.imml = self.data_path.new_data_address
-                self.data_path.signal_alu_l("imml")
-            else:  # register
-                self.data_path.signal_alu_l(b)
-            # if args[1] == "addr":
-            #     self.data_path.registers[args[0]] = self.data_path.new_data_address
-            #
-            # else:
-            #     self.data_path.registers[args[0]] = int(args[1])
+        if opcode == Opcode.MOV:
+            return self.execute_mov(instr)
 
-            self.data_path.signal_alu_r("0")  # сложение с нулём
-
-            self.data_path.signal_alu_op(Opcode.ADD)
-
-            self.data_path.signal_latch_r(a, self.data_path.alu.res)
-
+        if opcode == Opcode.ADD_STR:
+            # TODO убрать
             self.data_path.signal_latch_program_counter(sel_next=True)
             self.tick()
             return True
 
-        elif opcode == Opcode.ADD_STR:
-            # self.memory.memory[self.program_counter] = self.data_path.data_address
-            #
-            # length, s = instr["arg"]
-            #
-            # length = int(length)
-            # s = s[1:-1]
-            #
-            # self.memory.memory[self.data_path.data_address] = length
-            # self.data_path.data_address += 1
-            #
-            # for i in range(length):
-            #     self.memory.memory[self.data_path.data_address] = ord(s[i])
-            #     self.data_path.data_address += 1
-
-            self.data_path.signal_latch_program_counter(sel_next=True)
-            self.tick()
-            return True
-
-        elif opcode == Opcode.PRINT_STR:
+        if opcode == Opcode.PRINT_CHAR:
             arg = instr["arg"][0]
-            if type(arg) == str and arg[0] == "r" and arg[1:].isdigit():
-                instr["arg"] = [self.data_path.registers.get(arg)]
-            if phase == 1:
-                addr = instr["arg"]
-                if type(addr) == list:
-                    addr = int(instr["arg"][0])
-                    length = self.memory.memory[addr]
-
-                    self.data_path.data_address = addr
-
-                    self.tick()
-
-                # addr_ = self.memory.memory[addr]
-                self.tick()
-                return None
-            elif phase == 2:
-                addr = instr["arg"]
-                if type(addr) == list:
-                    return
-                # так называемая косвенная относительная адресация
-                addr_ = self.memory.memory[addr]
-                length = self.memory.memory[addr_]
-
-                self.data_path.data_address = addr_
-
-                self.tick()
-            elif phase == 3:
-                self.data_path.data_address += 1
-
-                self.tick()
+            if isinstance(arg, str) and arg[0] == "r" and arg[1:].isdigit():
+                self.data_path.data_address = self.data_path.registers.get(arg)
             else:
-                addr = instr["arg"]
-                if type(addr) == list:
-                    addr_ = int(instr["arg"][0])
-                    length = self.memory.memory[addr_]
-                else:
-                    addr_ = self.memory.memory[addr]
-                    length = self.memory.memory[addr_]
+                self.data_path.data_address = instr["arg"][0]
 
-                # TODO убрать это дублирование кода
-                phase -= 1
+            self.data_path.signal_latch_acc()
+            self.data_path.signal_output()
 
-                for i in range(length):
-                    if phase == 3 + 3 * i:
-                        self.data_path.signal_latch_acc()
-                        self.tick()
-                        return None
-                    elif phase == 3 + 3 * i + 1:
-                        self.data_path.signal_output()
-                        self.tick()
-                        return None
-                    elif phase == 3 + 3 * i + 2:
-                        self.data_path.data_address += 1
-                        self.tick()
-                        return None
+            self.data_path.signal_latch_program_counter(sel_next=True)
+            self.tick()
+            return True
 
-                self.data_path.signal_latch_program_counter(sel_next=True)
-                self.tick()
-                return True
+        if opcode == Opcode.PRINT_STR:
+            return self.execute_print_str(instr, phase)
 
-        elif opcode == Opcode.STORE:
+        if opcode == Opcode.STORE:
             args: list[str]
             args = instr["arg"]
             a, b = args
@@ -600,47 +586,30 @@ class ControlUnit:
             self.tick()
             return True
 
-        elif opcode == Opcode.EI:
+        if opcode == Opcode.EI:
             self.interruption_enabled = True
             self.data_path.signal_latch_program_counter(sel_next=True)
             self.tick()
             return True
 
-        elif opcode == Opcode.DI:
+        if opcode == Opcode.DI:
             self.interruption_enabled = False
             self.data_path.signal_latch_program_counter(sel_next=True)
             self.tick()
 
             return True
-        elif opcode == Opcode.IRET:
+        if opcode == Opcode.IRET:
             self.handling_interruption = False
             self.data_path.signal_latch_program_counter(sel_next=True)
             self.tick()
-            # self.interruption_enabled = True
 
-            self.program_counter = 107
             self.data_path.interruption_controller.interruption = False
 
             logging.debug("STOP HANDLING INTERRUPTION")
 
             return True
-        else:
-            print(opcode)
-
-    def execute_iret(self):
-        if not self.handling_interruption:
-            return
-
-        # address = self.data_path.signal_read_address_stack()
-        # self.data_path.signal_latch_address_stack_top(address)
-        # self.tick()
-        #
-        # self.data_path.signal_latch_pc(self.data_path.address_stack_top)
-        self.handling_interruption = False
-        self.data_path.interruption_controller.interruption = False
-        self.tick()
-
-        logging.debug("STOP HANDLING INTERRUPTION")
+        print(opcode)
+        raise UnknownCommandError(opcode.value)
 
     def __repr__(self):
         """Вернуть строковое представление состояния процессора."""
@@ -667,7 +636,7 @@ class ControlUnit:
             term = instr["term"]
             instr_repr += "  ('{}'@{}:{})".format(term.symbol, term.line, term.pos)
 
-        return "{} \t{} \t{}".format(state_repr, instr_repr, self.data_path.input_register)
+        return "{} \t{}".format(state_repr, instr_repr)
 
 
 def initiate_interruption(control_unit: ControlUnit, input_tokens: list):
@@ -682,10 +651,8 @@ def initiate_interruption(control_unit: ControlUnit, input_tokens: list):
             control_unit.data_path.interruption_controller.generate_interruption(1)
             if next_token[1]:
                 control_unit.data_path.signal_latch_input_register(ord(next_token[1]))
-                # control_unit.data_path.input_register = ord(next_token[1])
             else:
                 control_unit.data_path.signal_latch_input_register(0)
-                # control_unit.data_path.input_register = 0
 
             return input_tokens[1:]
     return input_tokens
@@ -705,7 +672,7 @@ def simulation(code: list, input_tokens: list, data_memory_size: int, limit: int
     """
     memory = Memory(data_memory_size, code)
     alu = ALU()
-    # data_path = DataPath(alu, memory, input_tokens)
+
     data_path = DataPath(alu, memory)
     control_unit = ControlUnit(memory, data_path)
     instr_counter = 0
