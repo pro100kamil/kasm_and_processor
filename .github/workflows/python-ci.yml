@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  computer-simulator:
+  kasm_and_processor:
     runs-on: ubuntu-latest
 
     steps:
