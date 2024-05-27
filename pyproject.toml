@@ -2,7 +2,7 @@
 name = "kasm_and_processor"
 version = "0.1.0"
 description = ""
-authors = ["Kamil"]
+authors = ["Kamil!"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
