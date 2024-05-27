@@ -3,7 +3,7 @@ name: Python CI
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   kasm_and_processor:
