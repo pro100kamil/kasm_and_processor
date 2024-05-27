@@ -1,6 +1,5 @@
 [tool.poetry]
 name = "kasm_and_processor"
-#name = "asm"
 version = "0.1.0"
 description = ""
 authors = ["Kamil"]
