@@ -96,7 +96,7 @@ class DataPath:
             "r4": 0,
             "rc": 0,  # "r5": 0,
             "rs": 0,  # "r6": 0,
-            "r7": 0,
+            "r7": 0
         }
 
         self.memory = memory

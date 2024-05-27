@@ -22,13 +22,13 @@ in_source: |-
       halt
 in_stdin: |
 out_log: |
-  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 28 r3: 8 	mov ['rc', '999']  ('mov rc,999'@4:0)
-  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 28 r3: 8 	mov ['rs', '0']  ('mov rs,0'@5:0)
-  DEBUG   machine:simulation    TICK:   2 PC: 102 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 28 r3: 8 	jz [110, 'rc']  ('jz break,rc'@7:0)
-  DEBUG   machine:simulation    TICK:   3 PC: 102 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 28 r3: 8 	jz [110, 'rc']  ('jz break,rc'@7:0)
-  DEBUG   machine:simulation    TICK:   4 PC: 103 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 28 r3: 8 	mod ['r1', 'rc', '3']  ('mod r1,rc,3'@9:0)
-  DEBUG   machine:simulation    TICK:   5 PC: 104 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 28 r3: 8 	mod ['r2', 'rc', '5']  ('mod r2,rc,5'@10:0)
-  DEBUG   machine:simulation    TICK:   6 PC: 105 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 4 r3: 8 	mul ['r3', 'r1', 'r2']  ('mul r3,r1,r2'@11:0)
+  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0 	mov ['rc', '999']  ('mov rc,999'@4:0)
+  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 0 r3: 0 	mov ['rs', '0']  ('mov rs,0'@5:0)
+  DEBUG   machine:simulation    TICK:   2 PC: 102 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 0 r3: 0 	jz [110, 'rc']  ('jz break,rc'@7:0)
+  DEBUG   machine:simulation    TICK:   3 PC: 102 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 0 r3: 0 	jz [110, 'rc']  ('jz break,rc'@7:0)
+  DEBUG   machine:simulation    TICK:   4 PC: 103 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 0 r3: 0 	mod ['r1', 'rc', '3']  ('mod r1,rc,3'@9:0)
+  DEBUG   machine:simulation    TICK:   5 PC: 104 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 0 r3: 0 	mod ['r2', 'rc', '5']  ('mod r2,rc,5'@10:0)
+  DEBUG   machine:simulation    TICK:   6 PC: 105 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 4 r3: 0 	mul ['r3', 'r1', 'r2']  ('mul r3,r1,r2'@11:0)
   DEBUG   machine:simulation    TICK:   7 PC: 106 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 4 r3: 0 	jnz [108, 'r3']  ('jnz end_of_loop,r3'@13:0)
   DEBUG   machine:simulation    TICK:   8 PC: 106 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 4 r3: 0 	jnz [108, 'r3']  ('jnz end_of_loop,r3'@13:0)
   DEBUG   machine:simulation    TICK:   9 PC: 107 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 999 r1: 0 r2: 4 r3: 0 	add ['rs', 'rs', 'rc']  ('add rs,rs,rc'@15:0)

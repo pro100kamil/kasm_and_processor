@@ -55,8 +55,8 @@ in_source: |-
 in_stdin: |-
   [(70, 'K'), (80, 'A'), (90, 'M'), (100, 'I'), (110, 'L'), (120, '4'), (130, 'i'), (140, 'k'), (150, '')]
 out_log: |
-  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 12 r3: 0 	mov ['r1', '19']  ('mov r1,19'@8:0)
-  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 12 r3: 0 	mov ['r2', '0']  ('mov r2,question'@9:0)
+  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0 	mov ['r1', '19']  ('mov r1,19'@8:0)
+  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 0 r3: 0 	mov ['r2', '0']  ('mov r2,question'@9:0)
   DEBUG   machine:simulation    TICK:   2 PC: 102 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 0 r3: 0 	call 125  ('call print_str'@10:0)
   DEBUG   machine:simulation    TICK:   3 PC: 125 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 0 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
   DEBUG   machine:simulation    TICK:   4 PC: 125 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 0 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
