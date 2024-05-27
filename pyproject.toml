@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "asm"
+#name = "asm"
 name = "kasm_and_processor"
-#version = "0q.1.0"
+version = "0.1.0"
 description = ""
 authors = ["Kamil"]
 readme = "README.md"
