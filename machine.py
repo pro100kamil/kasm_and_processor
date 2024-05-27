@@ -78,15 +78,7 @@ class DataPath:
 
     output_buffer: list = None
 
-    registers: ClassVar[dict[str, int]] = {
-        "r1": 0,
-        "r2": 0,
-        "r3": 0,
-        "r4": 0,
-        "rc": 0,  # "r5": 0,
-        "rs": 0,  # "r6": 0,
-        "r7": 0,
-    }
+    registers: dict[str, int] = None
 
     imml: int = None
     immr: int = None
@@ -97,6 +89,16 @@ class DataPath:
     interruption_controller: InterruptionController = None
 
     def __init__(self, alu: ALU, memory: Memory):
+        self.registers = {
+            "r1": 0,
+            "r2": 0,
+            "r3": 0,
+            "r4": 0,
+            "rc": 0,  # "r5": 0,
+            "rs": 0,  # "r6": 0,
+            "r7": 0,
+        }
+
         self.memory = memory
         self.alu = alu
         self.data_address = memory.memory.index(0)
