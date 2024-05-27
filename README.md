@@ -174,11 +174,11 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 | sub        | 1             |
 | mod        | 1             |
 | mul        | 1             |
-| call       | 4             |
-| ret        | 2             |
-| add_str    | 2             |
-| print_char | 4             |
-| ei         | 5             |
+| call       | 2             |
+| ret        | 1             |
+| add_str    | 0             |
+| print_char | 1             |
+| ei         | 1             |
 | di         | 1             |
 | iret       | 1             |
 | store      | 1             |
@@ -238,13 +238,13 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 
 ### DataPath
 
-![DataPath](./schema.jpg)
+![DataPath](./datapath.png)
 
 Реализован в классе `DataPath`.
 
 ### ControlUnit
 
-![ControlUnit](./schema.jpg)
+![ControlUnit](./control_unit.png)
 
 Реализован в классе `ControlUnit`.
 
