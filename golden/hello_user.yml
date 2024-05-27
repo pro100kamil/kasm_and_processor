@@ -1,162 +1,430 @@
 in_source: |-
   question:
-    add_str 19,'what is your name? '
+      add_str 19,'what is your name? '
   hello_start:
-    add_str 6,'hello '
+      add_str 6,'hello '
   hello_end:
-    add_str 1,'!'
+      add_str 1,'!'
 
-    print_str question
+  mov r1,19           ; length
+  mov r2,question     ; beginning
+  call print_str
+
+  mov r3,0            ; length of name
+  mov r4,addr         ; beginning of name
+  ei
+  loop:
+      jmp loop
+
+  int1:
+      di
+      right
+      input
+      jz break,ir
+      inc r3
+      ei
+      iret
 
   break:
-    print_str hello_start
-    ;
-    print_str hello_end
-    halt
+      store r4,r3
+
+      mov r1,6               ; length
+      mov r2,hello_start     ; beginning
+      call print_str
+
+      mov r1,r3
+      mov r2,r4
+      call print_str
+
+      mov r1,1
+      mov r2,hello_end
+      call print_str
+      halt
+
+
+  print_str:
+      loop_print_str:
+          jz break_print_str,r1
+          inc r2
+          print_char r2
+
+          dec r1
+          jmp loop_print_str
+      break_print_str:
+          ret
 in_stdin: |-
-  [(0, 'K'), (1, 'A'), (2, 'M'), (3, 'I'), (4, 'L'), (5, '')]
+  [(70, 'K'), (80, 'A'), (90, 'M'), (100, 'I'), (110, 'L'), (120, '4'), (130, 'i'), (140, 'k'), (150, '')]
 out_log: |
-  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:  29 MEM_OUT: 109 ACC: 33 rs: 0 	add_str ['19', "'what is your name? '"]  ('add_str 19,'what is your name? ''@2:0) 	0
-  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:  29 MEM_OUT: 109 ACC: 33 rs: 0 	add_str ['6', "'hello '"]  ('add_str 6,'hello ''@4:0) 	0
-  DEBUG   machine:simulation    TICK:   2 PC: 102 ADDR:  29 MEM_OUT: 109 ACC: 33 rs: 0 	add_str ['1', "'!'"]  ('add_str 1,'!''@6:0) 	0
-  DEBUG   machine:simulation    TICK:   3 PC: 103 ADDR:  29 MEM_OUT: 109 ACC: 33 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:   5 PC: 103 ADDR:  13 MEM_OUT: 19 ACC: 33 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:   5 PC: 103 ADDR:  13 MEM_OUT: 19 ACC: 33 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:   6 PC: 103 ADDR:  14 MEM_OUT: 119 ACC: 33 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:   7 PC: 103 ADDR:  14 MEM_OUT: 119 ACC: 119 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:   0 PC: 100 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 12 r3: 0 	mov ['r1', '19']  ('mov r1,19'@8:0)
+  DEBUG   machine:simulation    TICK:   1 PC: 101 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 12 r3: 0 	mov ['r2', '0']  ('mov r2,question'@9:0)
+  DEBUG   machine:simulation    TICK:   2 PC: 102 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 0 r3: 0 	call 125  ('call print_str'@10:0)
+  DEBUG   machine:simulation    TICK:   3 PC: 125 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 0 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:   4 PC: 125 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 0 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:   5 PC: 126 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 0 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:   6 PC: 127 ADDR:  29 MEM_OUT: 0 rs: 0 rc: 0 r1: 19 r2: 1 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: '' << 'w'
-  DEBUG   machine:simulation    TICK:   8 PC: 103 ADDR:  14 MEM_OUT: 119 ACC: 119 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:   9 PC: 103 ADDR:  15 MEM_OUT: 104 ACC: 119 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  10 PC: 103 ADDR:  15 MEM_OUT: 104 ACC: 104 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:   7 PC: 128 ADDR:   1 MEM_OUT: 119 rs: 0 rc: 0 r1: 19 r2: 1 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:   8 PC: 129 ADDR:   1 MEM_OUT: 119 rs: 0 rc: 0 r1: 18 r2: 1 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:   9 PC: 125 ADDR:   1 MEM_OUT: 119 rs: 0 rc: 0 r1: 18 r2: 1 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  10 PC: 125 ADDR:   1 MEM_OUT: 119 rs: 0 rc: 0 r1: 18 r2: 1 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  11 PC: 126 ADDR:   1 MEM_OUT: 119 rs: 0 rc: 0 r1: 18 r2: 1 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  12 PC: 127 ADDR:   1 MEM_OUT: 119 rs: 0 rc: 0 r1: 18 r2: 2 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'w' << 'h'
-  DEBUG   machine:simulation    TICK:  11 PC: 103 ADDR:  15 MEM_OUT: 104 ACC: 104 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  12 PC: 103 ADDR:  16 MEM_OUT: 97 ACC: 104 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  13 PC: 103 ADDR:  16 MEM_OUT: 97 ACC: 97 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  13 PC: 128 ADDR:   2 MEM_OUT: 104 rs: 0 rc: 0 r1: 18 r2: 2 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  14 PC: 129 ADDR:   2 MEM_OUT: 104 rs: 0 rc: 0 r1: 17 r2: 2 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  15 PC: 125 ADDR:   2 MEM_OUT: 104 rs: 0 rc: 0 r1: 17 r2: 2 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  16 PC: 125 ADDR:   2 MEM_OUT: 104 rs: 0 rc: 0 r1: 17 r2: 2 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  17 PC: 126 ADDR:   2 MEM_OUT: 104 rs: 0 rc: 0 r1: 17 r2: 2 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  18 PC: 127 ADDR:   2 MEM_OUT: 104 rs: 0 rc: 0 r1: 17 r2: 3 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'wh' << 'a'
-  DEBUG   machine:simulation    TICK:  14 PC: 103 ADDR:  16 MEM_OUT: 97 ACC: 97 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  15 PC: 103 ADDR:  17 MEM_OUT: 116 ACC: 97 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  16 PC: 103 ADDR:  17 MEM_OUT: 116 ACC: 116 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  19 PC: 128 ADDR:   3 MEM_OUT: 97 rs: 0 rc: 0 r1: 17 r2: 3 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  20 PC: 129 ADDR:   3 MEM_OUT: 97 rs: 0 rc: 0 r1: 16 r2: 3 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  21 PC: 125 ADDR:   3 MEM_OUT: 97 rs: 0 rc: 0 r1: 16 r2: 3 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  22 PC: 125 ADDR:   3 MEM_OUT: 97 rs: 0 rc: 0 r1: 16 r2: 3 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  23 PC: 126 ADDR:   3 MEM_OUT: 97 rs: 0 rc: 0 r1: 16 r2: 3 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  24 PC: 127 ADDR:   3 MEM_OUT: 97 rs: 0 rc: 0 r1: 16 r2: 4 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'wha' << 't'
-  DEBUG   machine:simulation    TICK:  17 PC: 103 ADDR:  17 MEM_OUT: 116 ACC: 116 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  18 PC: 103 ADDR:  18 MEM_OUT: 32 ACC: 116 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  19 PC: 103 ADDR:  18 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  25 PC: 128 ADDR:   4 MEM_OUT: 116 rs: 0 rc: 0 r1: 16 r2: 4 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  26 PC: 129 ADDR:   4 MEM_OUT: 116 rs: 0 rc: 0 r1: 15 r2: 4 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  27 PC: 125 ADDR:   4 MEM_OUT: 116 rs: 0 rc: 0 r1: 15 r2: 4 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  28 PC: 125 ADDR:   4 MEM_OUT: 116 rs: 0 rc: 0 r1: 15 r2: 4 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  29 PC: 126 ADDR:   4 MEM_OUT: 116 rs: 0 rc: 0 r1: 15 r2: 4 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  30 PC: 127 ADDR:   4 MEM_OUT: 116 rs: 0 rc: 0 r1: 15 r2: 5 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what' << ' '
-  DEBUG   machine:simulation    TICK:  20 PC: 103 ADDR:  18 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  21 PC: 103 ADDR:  19 MEM_OUT: 105 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  22 PC: 103 ADDR:  19 MEM_OUT: 105 ACC: 105 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  31 PC: 128 ADDR:   5 MEM_OUT: 32 rs: 0 rc: 0 r1: 15 r2: 5 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  32 PC: 129 ADDR:   5 MEM_OUT: 32 rs: 0 rc: 0 r1: 14 r2: 5 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  33 PC: 125 ADDR:   5 MEM_OUT: 32 rs: 0 rc: 0 r1: 14 r2: 5 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  34 PC: 125 ADDR:   5 MEM_OUT: 32 rs: 0 rc: 0 r1: 14 r2: 5 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  35 PC: 126 ADDR:   5 MEM_OUT: 32 rs: 0 rc: 0 r1: 14 r2: 5 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  36 PC: 127 ADDR:   5 MEM_OUT: 32 rs: 0 rc: 0 r1: 14 r2: 6 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what ' << 'i'
-  DEBUG   machine:simulation    TICK:  23 PC: 103 ADDR:  19 MEM_OUT: 105 ACC: 105 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  24 PC: 103 ADDR:  20 MEM_OUT: 115 ACC: 105 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  25 PC: 103 ADDR:  20 MEM_OUT: 115 ACC: 115 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  37 PC: 128 ADDR:   6 MEM_OUT: 105 rs: 0 rc: 0 r1: 14 r2: 6 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  38 PC: 129 ADDR:   6 MEM_OUT: 105 rs: 0 rc: 0 r1: 13 r2: 6 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  39 PC: 125 ADDR:   6 MEM_OUT: 105 rs: 0 rc: 0 r1: 13 r2: 6 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  40 PC: 125 ADDR:   6 MEM_OUT: 105 rs: 0 rc: 0 r1: 13 r2: 6 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  41 PC: 126 ADDR:   6 MEM_OUT: 105 rs: 0 rc: 0 r1: 13 r2: 6 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  42 PC: 127 ADDR:   6 MEM_OUT: 105 rs: 0 rc: 0 r1: 13 r2: 7 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what i' << 's'
-  DEBUG   machine:simulation    TICK:  26 PC: 103 ADDR:  20 MEM_OUT: 115 ACC: 115 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  27 PC: 103 ADDR:  21 MEM_OUT: 32 ACC: 115 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  28 PC: 103 ADDR:  21 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  43 PC: 128 ADDR:   7 MEM_OUT: 115 rs: 0 rc: 0 r1: 13 r2: 7 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  44 PC: 129 ADDR:   7 MEM_OUT: 115 rs: 0 rc: 0 r1: 12 r2: 7 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  45 PC: 125 ADDR:   7 MEM_OUT: 115 rs: 0 rc: 0 r1: 12 r2: 7 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  46 PC: 125 ADDR:   7 MEM_OUT: 115 rs: 0 rc: 0 r1: 12 r2: 7 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  47 PC: 126 ADDR:   7 MEM_OUT: 115 rs: 0 rc: 0 r1: 12 r2: 7 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  48 PC: 127 ADDR:   7 MEM_OUT: 115 rs: 0 rc: 0 r1: 12 r2: 8 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is' << ' '
-  DEBUG   machine:simulation    TICK:  29 PC: 103 ADDR:  21 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  30 PC: 103 ADDR:  22 MEM_OUT: 121 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  31 PC: 103 ADDR:  22 MEM_OUT: 121 ACC: 121 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  49 PC: 128 ADDR:   8 MEM_OUT: 32 rs: 0 rc: 0 r1: 12 r2: 8 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  50 PC: 129 ADDR:   8 MEM_OUT: 32 rs: 0 rc: 0 r1: 11 r2: 8 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  51 PC: 125 ADDR:   8 MEM_OUT: 32 rs: 0 rc: 0 r1: 11 r2: 8 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  52 PC: 125 ADDR:   8 MEM_OUT: 32 rs: 0 rc: 0 r1: 11 r2: 8 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  53 PC: 126 ADDR:   8 MEM_OUT: 32 rs: 0 rc: 0 r1: 11 r2: 8 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  54 PC: 127 ADDR:   8 MEM_OUT: 32 rs: 0 rc: 0 r1: 11 r2: 9 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is ' << 'y'
-  DEBUG   machine:simulation    TICK:  32 PC: 103 ADDR:  22 MEM_OUT: 121 ACC: 121 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  33 PC: 103 ADDR:  23 MEM_OUT: 111 ACC: 121 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  34 PC: 103 ADDR:  23 MEM_OUT: 111 ACC: 111 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  55 PC: 128 ADDR:   9 MEM_OUT: 121 rs: 0 rc: 0 r1: 11 r2: 9 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  56 PC: 129 ADDR:   9 MEM_OUT: 121 rs: 0 rc: 0 r1: 10 r2: 9 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  57 PC: 125 ADDR:   9 MEM_OUT: 121 rs: 0 rc: 0 r1: 10 r2: 9 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  58 PC: 125 ADDR:   9 MEM_OUT: 121 rs: 0 rc: 0 r1: 10 r2: 9 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  59 PC: 126 ADDR:   9 MEM_OUT: 121 rs: 0 rc: 0 r1: 10 r2: 9 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  60 PC: 127 ADDR:   9 MEM_OUT: 121 rs: 0 rc: 0 r1: 10 r2: 10 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is y' << 'o'
-  DEBUG   machine:simulation    TICK:  35 PC: 103 ADDR:  23 MEM_OUT: 111 ACC: 111 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  36 PC: 103 ADDR:  24 MEM_OUT: 117 ACC: 111 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  37 PC: 103 ADDR:  24 MEM_OUT: 117 ACC: 117 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  61 PC: 128 ADDR:  10 MEM_OUT: 111 rs: 0 rc: 0 r1: 10 r2: 10 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  62 PC: 129 ADDR:  10 MEM_OUT: 111 rs: 0 rc: 0 r1: 9 r2: 10 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  63 PC: 125 ADDR:  10 MEM_OUT: 111 rs: 0 rc: 0 r1: 9 r2: 10 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  64 PC: 125 ADDR:  10 MEM_OUT: 111 rs: 0 rc: 0 r1: 9 r2: 10 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  65 PC: 126 ADDR:  10 MEM_OUT: 111 rs: 0 rc: 0 r1: 9 r2: 10 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  66 PC: 127 ADDR:  10 MEM_OUT: 111 rs: 0 rc: 0 r1: 9 r2: 11 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is yo' << 'u'
-  DEBUG   machine:simulation    TICK:  38 PC: 103 ADDR:  24 MEM_OUT: 117 ACC: 117 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  39 PC: 103 ADDR:  25 MEM_OUT: 114 ACC: 117 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  40 PC: 103 ADDR:  25 MEM_OUT: 114 ACC: 114 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  67 PC: 128 ADDR:  11 MEM_OUT: 117 rs: 0 rc: 0 r1: 9 r2: 11 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  68 PC: 129 ADDR:  11 MEM_OUT: 117 rs: 0 rc: 0 r1: 8 r2: 11 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  69 PC: 125 ADDR:  11 MEM_OUT: 117 rs: 0 rc: 0 r1: 8 r2: 11 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  70 PC: 125 ADDR:  11 MEM_OUT: 117 rs: 0 rc: 0 r1: 8 r2: 11 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  71 PC: 126 ADDR:  11 MEM_OUT: 117 rs: 0 rc: 0 r1: 8 r2: 11 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  72 PC: 127 ADDR:  11 MEM_OUT: 117 rs: 0 rc: 0 r1: 8 r2: 12 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is you' << 'r'
-  DEBUG   machine:simulation    TICK:  41 PC: 103 ADDR:  25 MEM_OUT: 114 ACC: 114 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  42 PC: 103 ADDR:  26 MEM_OUT: 32 ACC: 114 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  43 PC: 103 ADDR:  26 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  73 PC: 128 ADDR:  12 MEM_OUT: 114 rs: 0 rc: 0 r1: 8 r2: 12 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  74 PC: 129 ADDR:  12 MEM_OUT: 114 rs: 0 rc: 0 r1: 7 r2: 12 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  75 PC: 125 ADDR:  12 MEM_OUT: 114 rs: 0 rc: 0 r1: 7 r2: 12 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  76 PC: 125 ADDR:  12 MEM_OUT: 114 rs: 0 rc: 0 r1: 7 r2: 12 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  77 PC: 126 ADDR:  12 MEM_OUT: 114 rs: 0 rc: 0 r1: 7 r2: 12 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  78 PC: 127 ADDR:  12 MEM_OUT: 114 rs: 0 rc: 0 r1: 7 r2: 13 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your' << ' '
-  DEBUG   machine:simulation    TICK:  44 PC: 103 ADDR:  26 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  45 PC: 103 ADDR:  27 MEM_OUT: 110 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  46 PC: 103 ADDR:  27 MEM_OUT: 110 ACC: 110 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  79 PC: 128 ADDR:  13 MEM_OUT: 32 rs: 0 rc: 0 r1: 7 r2: 13 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  80 PC: 129 ADDR:  13 MEM_OUT: 32 rs: 0 rc: 0 r1: 6 r2: 13 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  81 PC: 125 ADDR:  13 MEM_OUT: 32 rs: 0 rc: 0 r1: 6 r2: 13 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  82 PC: 125 ADDR:  13 MEM_OUT: 32 rs: 0 rc: 0 r1: 6 r2: 13 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  83 PC: 126 ADDR:  13 MEM_OUT: 32 rs: 0 rc: 0 r1: 6 r2: 13 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  84 PC: 127 ADDR:  13 MEM_OUT: 32 rs: 0 rc: 0 r1: 6 r2: 14 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your ' << 'n'
-  DEBUG   machine:simulation    TICK:  47 PC: 103 ADDR:  27 MEM_OUT: 110 ACC: 110 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  48 PC: 103 ADDR:  28 MEM_OUT: 97 ACC: 110 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  49 PC: 103 ADDR:  28 MEM_OUT: 97 ACC: 97 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  85 PC: 128 ADDR:  14 MEM_OUT: 110 rs: 0 rc: 0 r1: 6 r2: 14 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  86 PC: 129 ADDR:  14 MEM_OUT: 110 rs: 0 rc: 0 r1: 5 r2: 14 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  87 PC: 125 ADDR:  14 MEM_OUT: 110 rs: 0 rc: 0 r1: 5 r2: 14 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  88 PC: 125 ADDR:  14 MEM_OUT: 110 rs: 0 rc: 0 r1: 5 r2: 14 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  89 PC: 126 ADDR:  14 MEM_OUT: 110 rs: 0 rc: 0 r1: 5 r2: 14 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  90 PC: 127 ADDR:  14 MEM_OUT: 110 rs: 0 rc: 0 r1: 5 r2: 15 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your n' << 'a'
-  DEBUG   machine:simulation    TICK:  50 PC: 103 ADDR:  28 MEM_OUT: 97 ACC: 97 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  51 PC: 103 ADDR:  29 MEM_OUT: 109 ACC: 97 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  52 PC: 103 ADDR:  29 MEM_OUT: 109 ACC: 109 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  91 PC: 128 ADDR:  15 MEM_OUT: 97 rs: 0 rc: 0 r1: 5 r2: 15 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  92 PC: 129 ADDR:  15 MEM_OUT: 97 rs: 0 rc: 0 r1: 4 r2: 15 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  93 PC: 125 ADDR:  15 MEM_OUT: 97 rs: 0 rc: 0 r1: 4 r2: 15 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  94 PC: 125 ADDR:  15 MEM_OUT: 97 rs: 0 rc: 0 r1: 4 r2: 15 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK:  95 PC: 126 ADDR:  15 MEM_OUT: 97 rs: 0 rc: 0 r1: 4 r2: 15 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK:  96 PC: 127 ADDR:  15 MEM_OUT: 97 rs: 0 rc: 0 r1: 4 r2: 16 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your na' << 'm'
-  DEBUG   machine:simulation    TICK:  53 PC: 103 ADDR:  29 MEM_OUT: 109 ACC: 109 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  54 PC: 103 ADDR:  30 MEM_OUT: 101 ACC: 109 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  55 PC: 103 ADDR:  30 MEM_OUT: 101 ACC: 101 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK:  97 PC: 128 ADDR:  16 MEM_OUT: 109 rs: 0 rc: 0 r1: 4 r2: 16 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK:  98 PC: 129 ADDR:  16 MEM_OUT: 109 rs: 0 rc: 0 r1: 3 r2: 16 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK:  99 PC: 125 ADDR:  16 MEM_OUT: 109 rs: 0 rc: 0 r1: 3 r2: 16 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 100 PC: 125 ADDR:  16 MEM_OUT: 109 rs: 0 rc: 0 r1: 3 r2: 16 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 101 PC: 126 ADDR:  16 MEM_OUT: 109 rs: 0 rc: 0 r1: 3 r2: 16 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 102 PC: 127 ADDR:  16 MEM_OUT: 109 rs: 0 rc: 0 r1: 3 r2: 17 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your nam' << 'e'
-  DEBUG   machine:simulation    TICK:  56 PC: 103 ADDR:  30 MEM_OUT: 101 ACC: 101 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  57 PC: 103 ADDR:  31 MEM_OUT: 63 ACC: 101 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  58 PC: 103 ADDR:  31 MEM_OUT: 63 ACC: 63 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK: 103 PC: 128 ADDR:  17 MEM_OUT: 101 rs: 0 rc: 0 r1: 3 r2: 17 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 104 PC: 129 ADDR:  17 MEM_OUT: 101 rs: 0 rc: 0 r1: 2 r2: 17 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 105 PC: 125 ADDR:  17 MEM_OUT: 101 rs: 0 rc: 0 r1: 2 r2: 17 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 106 PC: 125 ADDR:  17 MEM_OUT: 101 rs: 0 rc: 0 r1: 2 r2: 17 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 107 PC: 126 ADDR:  17 MEM_OUT: 101 rs: 0 rc: 0 r1: 2 r2: 17 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 108 PC: 127 ADDR:  17 MEM_OUT: 101 rs: 0 rc: 0 r1: 2 r2: 18 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your name' << '?'
-  DEBUG   machine:simulation    TICK:  59 PC: 103 ADDR:  31 MEM_OUT: 63 ACC: 63 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  60 PC: 103 ADDR:  32 MEM_OUT: 32 ACC: 63 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  61 PC: 103 ADDR:  32 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
+  DEBUG   machine:simulation    TICK: 109 PC: 128 ADDR:  18 MEM_OUT: 63 rs: 0 rc: 0 r1: 2 r2: 18 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 110 PC: 129 ADDR:  18 MEM_OUT: 63 rs: 0 rc: 0 r1: 1 r2: 18 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 111 PC: 125 ADDR:  18 MEM_OUT: 63 rs: 0 rc: 0 r1: 1 r2: 18 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 112 PC: 125 ADDR:  18 MEM_OUT: 63 rs: 0 rc: 0 r1: 1 r2: 18 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 113 PC: 126 ADDR:  18 MEM_OUT: 63 rs: 0 rc: 0 r1: 1 r2: 18 r3: 0 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 114 PC: 127 ADDR:  18 MEM_OUT: 63 rs: 0 rc: 0 r1: 1 r2: 19 r3: 0 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your name?' << ' '
-  DEBUG   machine:simulation    TICK:  62 PC: 103 ADDR:  32 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  63 PC: 103 ADDR:  33 MEM_OUT: 6 ACC: 32 rs: 0 	print_str [13]  ('print_str question'@8:0) 	0
-  DEBUG   machine:simulation    TICK:  64 PC: 104 ADDR:  33 MEM_OUT: 6 ACC: 32 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  66 PC: 104 ADDR:  33 MEM_OUT: 6 ACC: 32 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  66 PC: 104 ADDR:  33 MEM_OUT: 6 ACC: 32 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  67 PC: 104 ADDR:  34 MEM_OUT: 104 ACC: 32 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  68 PC: 104 ADDR:  34 MEM_OUT: 104 ACC: 104 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
+  DEBUG   machine:simulation    TICK: 115 PC: 128 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 1 r2: 19 r3: 0 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 116 PC: 129 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 117 PC: 125 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 118 PC: 125 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 119 PC: 130 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	ret  ('ret'@53:0)
+  DEBUG   machine:simulation    TICK: 120 PC: 103 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	mov ['r3', '0']  ('mov r3,0'@12:0)
+  DEBUG   machine:simulation    TICK: 121 PC: 104 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	mov ['r4', 'addr']  ('mov r4,addr'@13:0)
+  DEBUG   machine:simulation    TICK: 122 PC: 105 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	ei  ('ei'@14:0)
+  DEBUG   machine:simulation    TICK: 123 PC: 106 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	jmp 106  ('jmp loop'@16:0)
+  DEBUG   machine:check_and_handle_interruption START HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 124 PC: 108 ADDR:  19 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	right  ('right'@20:0)
+  DEBUG   machine:simulation    TICK: 125 PC: 109 ADDR:  20 MEM_OUT: 6 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	input  ('input'@21:0)
+  DEBUG   machine:signal_wr     input: 'K'
+  DEBUG   machine:simulation    TICK: 126 PC: 110 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 127 PC: 110 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 128 PC: 111 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 19 r3: 0 	inc ['r3']  ('inc r3'@23:0)
+  DEBUG   machine:simulation    TICK: 129 PC: 112 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 19 r3: 1 	ei  ('ei'@24:0)
+  DEBUG   machine:simulation    TICK: 130 PC: 113 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 19 r3: 1 	iret  ('iret'@25:0)
+  DEBUG   machine:execute_iret  STOP HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 131 PC: 106 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 19 r3: 1 	jmp 106  ('jmp loop'@16:0)
+  DEBUG   machine:check_and_handle_interruption START HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 132 PC: 108 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 19 r3: 1 	right  ('right'@20:0)
+  DEBUG   machine:simulation    TICK: 133 PC: 109 ADDR:  31 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 1 	input  ('input'@21:0)
+  DEBUG   machine:signal_wr     input: 'A'
+  DEBUG   machine:simulation    TICK: 134 PC: 110 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 19 r3: 1 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 135 PC: 110 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 19 r3: 1 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 136 PC: 111 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 19 r3: 1 	inc ['r3']  ('inc r3'@23:0)
+  DEBUG   machine:simulation    TICK: 137 PC: 112 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 19 r3: 2 	ei  ('ei'@24:0)
+  DEBUG   machine:simulation    TICK: 138 PC: 113 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 19 r3: 2 	iret  ('iret'@25:0)
+  DEBUG   machine:execute_iret  STOP HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 139 PC: 106 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 19 r3: 2 	jmp 106  ('jmp loop'@16:0)
+  DEBUG   machine:check_and_handle_interruption START HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 140 PC: 108 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 19 r3: 2 	right  ('right'@20:0)
+  DEBUG   machine:simulation    TICK: 141 PC: 109 ADDR:  32 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 2 	input  ('input'@21:0)
+  DEBUG   machine:signal_wr     input: 'M'
+  DEBUG   machine:simulation    TICK: 142 PC: 110 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 19 r3: 2 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 143 PC: 110 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 19 r3: 2 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 144 PC: 111 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 19 r3: 2 	inc ['r3']  ('inc r3'@23:0)
+  DEBUG   machine:simulation    TICK: 145 PC: 112 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 19 r3: 3 	ei  ('ei'@24:0)
+  DEBUG   machine:simulation    TICK: 146 PC: 113 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 19 r3: 3 	iret  ('iret'@25:0)
+  DEBUG   machine:execute_iret  STOP HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 147 PC: 106 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 19 r3: 3 	jmp 106  ('jmp loop'@16:0)
+  DEBUG   machine:check_and_handle_interruption START HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 148 PC: 108 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 19 r3: 3 	right  ('right'@20:0)
+  DEBUG   machine:simulation    TICK: 149 PC: 109 ADDR:  33 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 3 	input  ('input'@21:0)
+  DEBUG   machine:signal_wr     input: 'I'
+  DEBUG   machine:simulation    TICK: 150 PC: 110 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 19 r3: 3 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 151 PC: 110 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 19 r3: 3 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 152 PC: 111 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 19 r3: 3 	inc ['r3']  ('inc r3'@23:0)
+  DEBUG   machine:simulation    TICK: 153 PC: 112 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 19 r3: 4 	ei  ('ei'@24:0)
+  DEBUG   machine:simulation    TICK: 154 PC: 113 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 19 r3: 4 	iret  ('iret'@25:0)
+  DEBUG   machine:execute_iret  STOP HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 155 PC: 106 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 19 r3: 4 	jmp 106  ('jmp loop'@16:0)
+  DEBUG   machine:check_and_handle_interruption START HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 156 PC: 108 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 19 r3: 4 	right  ('right'@20:0)
+  DEBUG   machine:simulation    TICK: 157 PC: 109 ADDR:  34 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 4 	input  ('input'@21:0)
+  DEBUG   machine:signal_wr     input: 'L'
+  DEBUG   machine:simulation    TICK: 158 PC: 110 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 19 r3: 4 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 159 PC: 110 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 19 r3: 4 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 160 PC: 111 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 19 r3: 4 	inc ['r3']  ('inc r3'@23:0)
+  DEBUG   machine:simulation    TICK: 161 PC: 112 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 19 r3: 5 	ei  ('ei'@24:0)
+  DEBUG   machine:simulation    TICK: 162 PC: 113 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 19 r3: 5 	iret  ('iret'@25:0)
+  DEBUG   machine:execute_iret  STOP HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 163 PC: 106 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 19 r3: 5 	jmp 106  ('jmp loop'@16:0)
+  DEBUG   machine:check_and_handle_interruption START HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 164 PC: 108 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 19 r3: 5 	right  ('right'@20:0)
+  DEBUG   machine:simulation    TICK: 165 PC: 109 ADDR:  35 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 5 	input  ('input'@21:0)
+  DEBUG   machine:signal_wr     input: '4'
+  DEBUG   machine:simulation    TICK: 166 PC: 110 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 19 r3: 5 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 167 PC: 110 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 19 r3: 5 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 168 PC: 111 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 19 r3: 5 	inc ['r3']  ('inc r3'@23:0)
+  DEBUG   machine:simulation    TICK: 169 PC: 112 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 19 r3: 6 	ei  ('ei'@24:0)
+  DEBUG   machine:simulation    TICK: 170 PC: 113 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 19 r3: 6 	iret  ('iret'@25:0)
+  DEBUG   machine:execute_iret  STOP HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 171 PC: 106 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 19 r3: 6 	jmp 106  ('jmp loop'@16:0)
+  DEBUG   machine:check_and_handle_interruption START HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 172 PC: 108 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 19 r3: 6 	right  ('right'@20:0)
+  DEBUG   machine:simulation    TICK: 173 PC: 109 ADDR:  36 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 6 	input  ('input'@21:0)
+  DEBUG   machine:signal_wr     input: 'i'
+  DEBUG   machine:simulation    TICK: 174 PC: 110 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 19 r3: 6 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 175 PC: 110 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 19 r3: 6 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 176 PC: 111 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 19 r3: 6 	inc ['r3']  ('inc r3'@23:0)
+  DEBUG   machine:simulation    TICK: 177 PC: 112 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 19 r3: 7 	ei  ('ei'@24:0)
+  DEBUG   machine:simulation    TICK: 178 PC: 113 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 19 r3: 7 	iret  ('iret'@25:0)
+  DEBUG   machine:execute_iret  STOP HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 179 PC: 106 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 19 r3: 7 	jmp 106  ('jmp loop'@16:0)
+  DEBUG   machine:check_and_handle_interruption START HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 180 PC: 108 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 19 r3: 7 	right  ('right'@20:0)
+  DEBUG   machine:simulation    TICK: 181 PC: 109 ADDR:  37 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 7 	input  ('input'@21:0)
+  DEBUG   machine:signal_wr     input: 'k'
+  DEBUG   machine:simulation    TICK: 182 PC: 110 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 19 r3: 7 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 183 PC: 110 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 19 r3: 7 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 184 PC: 111 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 19 r3: 7 	inc ['r3']  ('inc r3'@23:0)
+  DEBUG   machine:simulation    TICK: 185 PC: 112 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 19 r3: 8 	ei  ('ei'@24:0)
+  DEBUG   machine:simulation    TICK: 186 PC: 113 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 19 r3: 8 	iret  ('iret'@25:0)
+  DEBUG   machine:execute_iret  STOP HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 187 PC: 106 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 19 r3: 8 	jmp 106  ('jmp loop'@16:0)
+  DEBUG   machine:check_and_handle_interruption START HANDLING INTERRUPTION
+  DEBUG   machine:simulation    TICK: 188 PC: 108 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 19 r3: 8 	right  ('right'@20:0)
+  DEBUG   machine:simulation    TICK: 189 PC: 109 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 8 	input  ('input'@21:0)
+  DEBUG   machine:signal_wr     input: '\x00'
+  DEBUG   machine:simulation    TICK: 190 PC: 110 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 8 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 191 PC: 110 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 8 	jz [114, 'ir']  ('jz break,ir'@22:0)
+  DEBUG   machine:simulation    TICK: 192 PC: 114 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 8 	store ['r4', 'r3']  ('store r4,r3'@28:0)
+  DEBUG   machine:simulation    TICK: 193 PC: 115 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 19 r3: 8 	mov ['r1', '6']  ('mov r1,6'@30:0)
+  DEBUG   machine:simulation    TICK: 194 PC: 116 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 6 r2: 19 r3: 8 	mov ['r2', '20']  ('mov r2,hello_start'@31:0)
+  DEBUG   machine:simulation    TICK: 195 PC: 117 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 6 r2: 20 r3: 8 	call 125  ('call print_str'@32:0)
+  DEBUG   machine:simulation    TICK: 196 PC: 125 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 6 r2: 20 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 197 PC: 125 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 6 r2: 20 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 198 PC: 126 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 6 r2: 20 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 199 PC: 127 ADDR:  38 MEM_OUT: 0 rs: 0 rc: 0 r1: 6 r2: 21 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your name? ' << 'h'
-  DEBUG   machine:simulation    TICK:  69 PC: 104 ADDR:  34 MEM_OUT: 104 ACC: 104 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  70 PC: 104 ADDR:  35 MEM_OUT: 101 ACC: 104 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  71 PC: 104 ADDR:  35 MEM_OUT: 101 ACC: 101 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
+  DEBUG   machine:simulation    TICK: 200 PC: 128 ADDR:  21 MEM_OUT: 104 rs: 0 rc: 0 r1: 6 r2: 21 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 201 PC: 129 ADDR:  21 MEM_OUT: 104 rs: 0 rc: 0 r1: 5 r2: 21 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 202 PC: 125 ADDR:  21 MEM_OUT: 104 rs: 0 rc: 0 r1: 5 r2: 21 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 203 PC: 125 ADDR:  21 MEM_OUT: 104 rs: 0 rc: 0 r1: 5 r2: 21 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 204 PC: 126 ADDR:  21 MEM_OUT: 104 rs: 0 rc: 0 r1: 5 r2: 21 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 205 PC: 127 ADDR:  21 MEM_OUT: 104 rs: 0 rc: 0 r1: 5 r2: 22 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your name? h' << 'e'
-  DEBUG   machine:simulation    TICK:  72 PC: 104 ADDR:  35 MEM_OUT: 101 ACC: 101 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  73 PC: 104 ADDR:  36 MEM_OUT: 108 ACC: 101 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  74 PC: 104 ADDR:  36 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
+  DEBUG   machine:simulation    TICK: 206 PC: 128 ADDR:  22 MEM_OUT: 101 rs: 0 rc: 0 r1: 5 r2: 22 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 207 PC: 129 ADDR:  22 MEM_OUT: 101 rs: 0 rc: 0 r1: 4 r2: 22 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 208 PC: 125 ADDR:  22 MEM_OUT: 101 rs: 0 rc: 0 r1: 4 r2: 22 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 209 PC: 125 ADDR:  22 MEM_OUT: 101 rs: 0 rc: 0 r1: 4 r2: 22 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 210 PC: 126 ADDR:  22 MEM_OUT: 101 rs: 0 rc: 0 r1: 4 r2: 22 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 211 PC: 127 ADDR:  22 MEM_OUT: 101 rs: 0 rc: 0 r1: 4 r2: 23 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your name? he' << 'l'
-  DEBUG   machine:simulation    TICK:  75 PC: 104 ADDR:  36 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  76 PC: 104 ADDR:  37 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  77 PC: 104 ADDR:  37 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
+  DEBUG   machine:simulation    TICK: 212 PC: 128 ADDR:  23 MEM_OUT: 108 rs: 0 rc: 0 r1: 4 r2: 23 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 213 PC: 129 ADDR:  23 MEM_OUT: 108 rs: 0 rc: 0 r1: 3 r2: 23 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 214 PC: 125 ADDR:  23 MEM_OUT: 108 rs: 0 rc: 0 r1: 3 r2: 23 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 215 PC: 125 ADDR:  23 MEM_OUT: 108 rs: 0 rc: 0 r1: 3 r2: 23 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 216 PC: 126 ADDR:  23 MEM_OUT: 108 rs: 0 rc: 0 r1: 3 r2: 23 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 217 PC: 127 ADDR:  23 MEM_OUT: 108 rs: 0 rc: 0 r1: 3 r2: 24 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your name? hel' << 'l'
-  DEBUG   machine:simulation    TICK:  78 PC: 104 ADDR:  37 MEM_OUT: 108 ACC: 108 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  79 PC: 104 ADDR:  38 MEM_OUT: 111 ACC: 108 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  80 PC: 104 ADDR:  38 MEM_OUT: 111 ACC: 111 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
+  DEBUG   machine:simulation    TICK: 218 PC: 128 ADDR:  24 MEM_OUT: 108 rs: 0 rc: 0 r1: 3 r2: 24 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 219 PC: 129 ADDR:  24 MEM_OUT: 108 rs: 0 rc: 0 r1: 2 r2: 24 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 220 PC: 125 ADDR:  24 MEM_OUT: 108 rs: 0 rc: 0 r1: 2 r2: 24 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 221 PC: 125 ADDR:  24 MEM_OUT: 108 rs: 0 rc: 0 r1: 2 r2: 24 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 222 PC: 126 ADDR:  24 MEM_OUT: 108 rs: 0 rc: 0 r1: 2 r2: 24 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 223 PC: 127 ADDR:  24 MEM_OUT: 108 rs: 0 rc: 0 r1: 2 r2: 25 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your name? hell' << 'o'
-  DEBUG   machine:simulation    TICK:  81 PC: 104 ADDR:  38 MEM_OUT: 111 ACC: 111 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  82 PC: 104 ADDR:  39 MEM_OUT: 32 ACC: 111 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  83 PC: 104 ADDR:  39 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
+  DEBUG   machine:simulation    TICK: 224 PC: 128 ADDR:  25 MEM_OUT: 111 rs: 0 rc: 0 r1: 2 r2: 25 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 225 PC: 129 ADDR:  25 MEM_OUT: 111 rs: 0 rc: 0 r1: 1 r2: 25 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 226 PC: 125 ADDR:  25 MEM_OUT: 111 rs: 0 rc: 0 r1: 1 r2: 25 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 227 PC: 125 ADDR:  25 MEM_OUT: 111 rs: 0 rc: 0 r1: 1 r2: 25 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 228 PC: 126 ADDR:  25 MEM_OUT: 111 rs: 0 rc: 0 r1: 1 r2: 25 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 229 PC: 127 ADDR:  25 MEM_OUT: 111 rs: 0 rc: 0 r1: 1 r2: 26 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
   DEBUG   machine:signal_output output: 'what is your name? hello' << ' '
-  DEBUG   machine:simulation    TICK:  84 PC: 104 ADDR:  39 MEM_OUT: 32 ACC: 32 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  85 PC: 104 ADDR:  40 MEM_OUT: 1 ACC: 32 rs: 0 	print_str [33]  ('print_str hello_start'@11:0) 	0
-  DEBUG   machine:simulation    TICK:  86 PC: 105 ADDR:  40 MEM_OUT: 1 ACC: 32 rs: 0 	print_str [40]  ('print_str hello_end'@13:0) 	0
-  DEBUG   machine:simulation    TICK:  88 PC: 105 ADDR:  40 MEM_OUT: 1 ACC: 32 rs: 0 	print_str [40]  ('print_str hello_end'@13:0) 	0
-  DEBUG   machine:simulation    TICK:  88 PC: 105 ADDR:  40 MEM_OUT: 1 ACC: 32 rs: 0 	print_str [40]  ('print_str hello_end'@13:0) 	0
-  DEBUG   machine:simulation    TICK:  89 PC: 105 ADDR:  41 MEM_OUT: 33 ACC: 32 rs: 0 	print_str [40]  ('print_str hello_end'@13:0) 	0
-  DEBUG   machine:simulation    TICK:  90 PC: 105 ADDR:  41 MEM_OUT: 33 ACC: 33 rs: 0 	print_str [40]  ('print_str hello_end'@13:0) 	0
-  DEBUG   machine:signal_output output: 'what is your name? hello ' << '!'
-  DEBUG   machine:simulation    TICK:  91 PC: 105 ADDR:  41 MEM_OUT: 33 ACC: 33 rs: 0 	print_str [40]  ('print_str hello_end'@13:0) 	0
-  DEBUG   machine:simulation    TICK:  92 PC: 105 ADDR:  42 MEM_OUT: 0 ACC: 33 rs: 0 	print_str [40]  ('print_str hello_end'@13:0) 	0
-  DEBUG   machine:simulation    TICK:  93 PC: 106 ADDR:  42 MEM_OUT: 0 ACC: 33 rs: 0 	halt  ('halt'@14:0) 	0
-  INFO    machine:simulation    output_buffer: 'what is your name? hello !'
+  DEBUG   machine:simulation    TICK: 230 PC: 128 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 1 r2: 26 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 231 PC: 129 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 26 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 232 PC: 125 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 26 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 233 PC: 125 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 26 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 234 PC: 130 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 26 r3: 8 	ret  ('ret'@53:0)
+  DEBUG   machine:simulation    TICK: 235 PC: 118 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 0 r2: 26 r3: 8 	mov ['r1', 'r3']  ('mov r1,r3'@34:0)
+  DEBUG   machine:simulation    TICK: 236 PC: 119 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 8 r2: 26 r3: 8 	mov ['r2', 'r4']  ('mov r2,r4'@35:0)
+  DEBUG   machine:simulation    TICK: 237 PC: 120 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 8 r2: 29 r3: 8 	call 125  ('call print_str'@36:0)
+  DEBUG   machine:simulation    TICK: 238 PC: 125 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 8 r2: 29 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 239 PC: 125 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 8 r2: 29 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 240 PC: 126 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 8 r2: 29 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 241 PC: 127 ADDR:  26 MEM_OUT: 32 rs: 0 rc: 0 r1: 8 r2: 30 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
+  DEBUG   machine:signal_output output: 'what is your name? hello ' << 'K'
+  DEBUG   machine:simulation    TICK: 242 PC: 128 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 8 r2: 30 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 243 PC: 129 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 7 r2: 30 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 244 PC: 125 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 7 r2: 30 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 245 PC: 125 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 7 r2: 30 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 246 PC: 126 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 7 r2: 30 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 247 PC: 127 ADDR:  30 MEM_OUT: 75 rs: 0 rc: 0 r1: 7 r2: 31 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
+  DEBUG   machine:signal_output output: 'what is your name? hello K' << 'A'
+  DEBUG   machine:simulation    TICK: 248 PC: 128 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 7 r2: 31 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 249 PC: 129 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 6 r2: 31 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 250 PC: 125 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 6 r2: 31 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 251 PC: 125 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 6 r2: 31 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 252 PC: 126 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 6 r2: 31 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 253 PC: 127 ADDR:  31 MEM_OUT: 65 rs: 0 rc: 0 r1: 6 r2: 32 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
+  DEBUG   machine:signal_output output: 'what is your name? hello KA' << 'M'
+  DEBUG   machine:simulation    TICK: 254 PC: 128 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 6 r2: 32 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 255 PC: 129 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 5 r2: 32 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 256 PC: 125 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 5 r2: 32 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 257 PC: 125 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 5 r2: 32 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 258 PC: 126 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 5 r2: 32 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 259 PC: 127 ADDR:  32 MEM_OUT: 77 rs: 0 rc: 0 r1: 5 r2: 33 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
+  DEBUG   machine:signal_output output: 'what is your name? hello KAM' << 'I'
+  DEBUG   machine:simulation    TICK: 260 PC: 128 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 5 r2: 33 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 261 PC: 129 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 4 r2: 33 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 262 PC: 125 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 4 r2: 33 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 263 PC: 125 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 4 r2: 33 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 264 PC: 126 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 4 r2: 33 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 265 PC: 127 ADDR:  33 MEM_OUT: 73 rs: 0 rc: 0 r1: 4 r2: 34 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
+  DEBUG   machine:signal_output output: 'what is your name? hello KAMI' << 'L'
+  DEBUG   machine:simulation    TICK: 266 PC: 128 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 4 r2: 34 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 267 PC: 129 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 3 r2: 34 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 268 PC: 125 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 3 r2: 34 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 269 PC: 125 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 3 r2: 34 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 270 PC: 126 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 3 r2: 34 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 271 PC: 127 ADDR:  34 MEM_OUT: 76 rs: 0 rc: 0 r1: 3 r2: 35 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
+  DEBUG   machine:signal_output output: 'what is your name? hello KAMIL' << '4'
+  DEBUG   machine:simulation    TICK: 272 PC: 128 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 3 r2: 35 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 273 PC: 129 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 2 r2: 35 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 274 PC: 125 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 2 r2: 35 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 275 PC: 125 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 2 r2: 35 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 276 PC: 126 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 2 r2: 35 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 277 PC: 127 ADDR:  35 MEM_OUT: 52 rs: 0 rc: 0 r1: 2 r2: 36 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
+  DEBUG   machine:signal_output output: 'what is your name? hello KAMIL4' << 'i'
+  DEBUG   machine:simulation    TICK: 278 PC: 128 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 2 r2: 36 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 279 PC: 129 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 1 r2: 36 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 280 PC: 125 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 1 r2: 36 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 281 PC: 125 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 1 r2: 36 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 282 PC: 126 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 1 r2: 36 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 283 PC: 127 ADDR:  36 MEM_OUT: 105 rs: 0 rc: 0 r1: 1 r2: 37 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
+  DEBUG   machine:signal_output output: 'what is your name? hello KAMIL4i' << 'k'
+  DEBUG   machine:simulation    TICK: 284 PC: 128 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 1 r2: 37 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 285 PC: 129 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 37 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 286 PC: 125 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 37 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 287 PC: 125 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 37 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 288 PC: 130 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 37 r3: 8 	ret  ('ret'@53:0)
+  DEBUG   machine:simulation    TICK: 289 PC: 121 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 37 r3: 8 	mov ['r1', '1']  ('mov r1,1'@38:0)
+  DEBUG   machine:simulation    TICK: 290 PC: 122 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 1 r2: 37 r3: 8 	mov ['r2', '27']  ('mov r2,hello_end'@39:0)
+  DEBUG   machine:simulation    TICK: 291 PC: 123 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 1 r2: 27 r3: 8 	call 125  ('call print_str'@40:0)
+  DEBUG   machine:simulation    TICK: 292 PC: 125 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 1 r2: 27 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 293 PC: 125 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 1 r2: 27 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 294 PC: 126 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 1 r2: 27 r3: 8 	inc ['r2']  ('inc r2'@47:0)
+  DEBUG   machine:simulation    TICK: 295 PC: 127 ADDR:  37 MEM_OUT: 107 rs: 0 rc: 0 r1: 1 r2: 28 r3: 8 	print_char ['r2']  ('print_char r2'@48:0)
+  DEBUG   machine:signal_output output: 'what is your name? hello KAMIL4ik' << '!'
+  DEBUG   machine:simulation    TICK: 296 PC: 128 ADDR:  28 MEM_OUT: 33 rs: 0 rc: 0 r1: 1 r2: 28 r3: 8 	dec ['r1']  ('dec r1'@50:0)
+  DEBUG   machine:simulation    TICK: 297 PC: 129 ADDR:  28 MEM_OUT: 33 rs: 0 rc: 0 r1: 0 r2: 28 r3: 8 	jmp 125  ('jmp loop_print_str'@51:0)
+  DEBUG   machine:simulation    TICK: 298 PC: 125 ADDR:  28 MEM_OUT: 33 rs: 0 rc: 0 r1: 0 r2: 28 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 299 PC: 125 ADDR:  28 MEM_OUT: 33 rs: 0 rc: 0 r1: 0 r2: 28 r3: 8 	jz [130, 'r1']  ('jz break_print_str,r1'@46:0)
+  DEBUG   machine:simulation    TICK: 300 PC: 130 ADDR:  28 MEM_OUT: 33 rs: 0 rc: 0 r1: 0 r2: 28 r3: 8 	ret  ('ret'@53:0)
+  DEBUG   machine:simulation    TICK: 301 PC: 124 ADDR:  28 MEM_OUT: 33 rs: 0 rc: 0 r1: 0 r2: 28 r3: 8 	halt  ('halt'@41:0)
+  INFO    machine:simulation    output_buffer: 'what is your name? hello KAMIL4ik!'
 out_stdout: |
-  source LoC: 14 code instr: 107
+  source LoC: 53 code instr: 31
   ============================================================
-  what is your name? hello !
-  instr_counter:  6 ticks: 93
+  what is your name? hello KAMIL4ik!
+  instr_counter:  254 ticks: 301
 out_code: |-
-  [12,
-   104,
-   101,
-   108,
-   108,
-   111,
-   32,
-   119,
-   111,
-   114,
-   108,
-   100,
-   33,
-   19,
+  [19,
    119,
    104,
    97,
@@ -243,10 +511,47 @@ out_code: |-
    0,
    0,
    0,
-   {"index": 0, "opcode": "add_str", "arg": ["19", "'what is your name? '"], "term": [2, 0, "add_str 19,'what is your name? '"]},
-   {"index": 1, "opcode": "add_str", "arg": ["6", "'hello '"], "term": [4, 0, "add_str 6,'hello '"]},
-   {"index": 2, "opcode": "add_str", "arg": ["1", "'!'"], "term": [6, 0, "add_str 1,'!'"]},
-   {"index": 3, "opcode": "print_str", "arg": [13], "term": [8, 0, "print_str question"]},
-   {"index": 4, "opcode": "print_str", "arg": [33], "term": [11, 0, "print_str hello_start"]},
-   {"index": 5, "opcode": "print_str", "arg": [40], "term": [13, 0, "print_str hello_end"]},
-   {"index": 6, "opcode": "halt", "term": [14, 0, "halt"]}]
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   107,
+   {"index": 0, "opcode": "mov", "arg": ["r1", "19"], "term": [8, 0, "mov r1,19"]},
+   {"index": 1, "opcode": "mov", "arg": ["r2", "0"], "term": [9, 0, "mov r2,question"]},
+   {"index": 2, "opcode": "call", "arg": 125, "term": [10, 0, "call print_str"]},
+   {"index": 3, "opcode": "mov", "arg": ["r3", "0"], "term": [12, 0, "mov r3,0"]},
+   {"index": 4, "opcode": "mov", "arg": ["r4", "addr"], "term": [13, 0, "mov r4,addr"]},
+   {"index": 5, "opcode": "ei", "term": [14, 0, "ei"]},
+   {"index": 6, "opcode": "jmp", "arg": 106, "term": [16, 0, "jmp loop"]},
+   {"index": 7, "opcode": "di", "term": [19, 0, "di"]},
+   {"index": 8, "opcode": "right", "term": [20, 0, "right"]},
+   {"index": 9, "opcode": "input", "term": [21, 0, "input"]},
+   {"index": 10, "opcode": "jz", "arg": [114, "ir"], "term": [22, 0, "jz break,ir"]},
+   {"index": 11, "opcode": "inc", "arg": ["r3"], "term": [23, 0, "inc r3"]},
+   {"index": 12, "opcode": "ei", "term": [24, 0, "ei"]},
+   {"index": 13, "opcode": "iret", "term": [25, 0, "iret"]},
+   {"index": 14, "opcode": "store", "arg": ["r4", "r3"], "term": [28, 0, "store r4,r3"]},
+   {"index": 15, "opcode": "mov", "arg": ["r1", "6"], "term": [30, 0, "mov r1,6"]},
+   {"index": 16, "opcode": "mov", "arg": ["r2", "20"], "term": [31, 0, "mov r2,hello_start"]},
+   {"index": 17, "opcode": "call", "arg": 125, "term": [32, 0, "call print_str"]},
+   {"index": 18, "opcode": "mov", "arg": ["r1", "r3"], "term": [34, 0, "mov r1,r3"]},
+   {"index": 19, "opcode": "mov", "arg": ["r2", "r4"], "term": [35, 0, "mov r2,r4"]},
+   {"index": 20, "opcode": "call", "arg": 125, "term": [36, 0, "call print_str"]},
+   {"index": 21, "opcode": "mov", "arg": ["r1", "1"], "term": [38, 0, "mov r1,1"]},
+   {"index": 22, "opcode": "mov", "arg": ["r2", "27"], "term": [39, 0, "mov r2,hello_end"]},
+   {"index": 23, "opcode": "call", "arg": 125, "term": [40, 0, "call print_str"]},
+   {"index": 24, "opcode": "halt", "term": [41, 0, "halt"]},
+   {"index": 25, "opcode": "jz", "arg": [130, "r1"], "term": [46, 0, "jz break_print_str,r1"]},
+   {"index": 26, "opcode": "inc", "arg": ["r2"], "term": [47, 0, "inc r2"]},
+   {"index": 27, "opcode": "print_char", "arg": ["r2"], "term": [48, 0, "print_char r2"]},
+   {"index": 28, "opcode": "dec", "arg": ["r1"], "term": [50, 0, "dec r1"]},
+   {"index": 29, "opcode": "jmp", "arg": 125, "term": [51, 0, "jmp loop_print_str"]},
+   {"index": 30, "opcode": "ret", "term": [53, 0, "ret"]}]

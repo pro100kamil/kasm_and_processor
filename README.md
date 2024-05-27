@@ -22,20 +22,44 @@ line ::= label [ comment ] "\n"
 label ::= label_name ":"
 
 instr ::= op0
-        | op1 label_name
+        | op1 arg
+        | op2 arg,arg
+        | op3 arg,arg,arg
 
-op0 ::= "increment"
-      | "decrement"
-      | "right"
-      | "left"
+op0 ::= "input"
       | "print"
-      | "input"
+      | "halt"
+      | "left"
+      | "right"
+      | "ei"
+      | "di"
+      | "iret"
+      | "ret"
 
-op1 ::= "jmp"
-      | "jz"
+op1 ::= "inc"
+      | "dec"
+      | "jmp"
+      | "print_char"
+      | "call"
+      
+op2 ::= "jz"
       | "jnz"
+      | "mov"
+      | "add_str"
+      | "store"
+      
+op3 ::= "add"
+      | "sub"
+      | "mod"
+      | "mul"
 
-integer ::= [ "-" ] { <any of "0-9"> }-
+arg ::= label_name | integer | register
+
+register ::= "r" digit
+
+integer ::= [ "-" ] { digit }
+
+digit ::= <any of "0-9">
 
 label_name ::= <any of "a-z A-Z _"> { <any of "a-z A-Z 0-9 _"> }
 
@@ -44,12 +68,12 @@ comment ::= ";" <any symbols except "\n">
 
 Поддерживаются однострочные комментарии, начинающиеся с `;`.
 
-Операции:
+Команды:
 
 - `inc r` -- увеличить значение в регистре r на 1
 - `dec r` -- уменьшить значение в регистре r на 1
-- `right` -- перейти к следующей ячейке ?
-- `left` -- перейти к предыдущей ячейке ?
+- `right` -- перейти к следующей ячейке 
+- `left` -- перейти к предыдущей ячейке 
 - `input` -- ввести извне значение и сохранить в текущей ячейке (символ)
 - `print` -- напечатать значение из текущей ячейки (символ)
 
@@ -63,18 +87,21 @@ comment ::= ";" <any symbols except "\n">
 - `mod r,v1,v2` -- записать в регистр r значение v1 % v2 (v1, v2 - числа или регистры)
 - `mul r,v1,v2` -- записать в регистр r значение v1 * v2 (v1, v2 - числа или регистры)
 
-- `add_str l,s` -- записать в регистр r значение v1 * v2 (v1, v2 - числа или регистры)
-- `print_str s` -- записать в регистр r значение v1 * v2 (v1, v2 - числа или регистры)
-- `ei` -- записать в регистр r значение v1 * v2 (v1, v2 - числа или регистры)
-- `di` -- записать в регистр r значение v1 * v2 (v1, v2 - числа или регистры)
-- `iret` -- записать в регистр r значение v1 * v2 (v1, v2 - числа или регистры)
-- `store a,b` -- записать в регистр r значение v1 * v2 (v1, v2 - числа или регистры)
+- `call` -- вызов процедуры (аргументы через регистры)
+- `ret` -- завершение процедуры
+
+- `add_str l,s` -- записать в память строку s длины l
+- `print_char c` -- вывести символ из ячейки c 
+- `ei` -- разрешить прерывания
+- `di` -- запретить прерывания
+- `iret` -- выход из обработки прерывания
+- `store a,b` -- записать в ячейку a значение b
 
 Метки для переходов определяются на отдельных строчках:
 
 ``` asm
-label: 
-    increment
+label:
+    inc r1
 ```
 
 И в другом месте (неважно, до или после определения) сослаться на эту метку:
@@ -87,14 +114,31 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 
 В программе не может быть дублирующихся меток, определенных в разных местах с одним именем.
 
-Пример кода на Asm см. в файле [./examples/cat.asm](./examples/cat.asm).
+Пример кода на Asm см. в файле [./asm/cat.asm](./asm/cat.asm).
 
 ## Организация памяти
 
-Модель памяти процессора (приведено списком, так как тривиальна):
+Память соответствует фон Неймановской архитектуре.
 
-1. Память команд. Машинное слово -- не определено. Реализуется списком словарей, описывающих инструкции (одно слово -- одна ячейка).
-2. Память данных. Машинное слово -- 8 бит, знаковое. Линейное адресное пространство. Реализуется списком чисел.
+```text
+           memory
++----------------------------+
+| 000 : data                 |
+|            ...             | 
+| 098 : data                 |
+| 099 : interruption vector  |
+| 100 : instruction1         |
+| 101 : instruction2         |
+| 102 : instruction3         |
+|            ...             | 
++----------------------------+
+```
+
+Общая память для данных и инструкций, 
+поэтому данные хранятся как числа, а инструкции как словарь.
+Вектор прерывания - это число - номер ячейки, в которой начинается обработка прерываний.
+
+ДОПИСАТЬ!
 
 В связи с отсутствием на уровне языка переменных, констант, литералов и т.д., описание механизмов работы с ними -- отсутствует. Содержание раздела -- смотри в задании.
 
@@ -102,26 +146,42 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 
 Особенности процессора:
 
-- Машинное слово -- 8 бит, знаковое.
+- Машинное слово -- 32 бит, знаковое.
 - Доступ к памяти данных осуществляется по адресу, хранящемуся в специальном регистре `data_address`. Установка адреса осуществляется путём инкрементирования или декрементирования инструкциями `<` и `>`.
 - Обработка данных осуществляется по текущему адресу операциями `+` и `-`, а также через ввод/вывод.
 - Поток управления:
     - инкремент `PC` после каждой инструкции;
-    - условный (`jz`) и безусловный (`jmp`) переходы (использование см. в разделе транслятор).
+    - условные (`jz`, `jnz`) и безусловный (`jmp`) переходы (использование см. в разделе транслятор).
 
 ### Набор инструкций
 
-| Язык | Инструкция   | Кол-во тактов | Описание                                                    |
-|:-----|:-------------|:--------------|:------------------------------------------------------------|
-| `+`  | increment    | 2             | увеличить значение в текущей ячейке на 1                    |
-| `-`  | decrement    | 2             | уменьшить значение в текущей ячейке на 1                    |
-| `<`  | left         | 1             | перейти к следующей ячейке                                  |
-| `>`  | right        | 1             | перейти к предыдущей ячейке                                 |
-| `.`  | print        | 2             | напечатать значение из текущей ячейки (символ)              |
-| `,`  | input        | 2             | ввести извне значение и сохранить в текущей ячейке (символ) |
-|      | jmp `<addr>` | 1             | безусловный переход                                         |
-|      | jz `<addr>`  | 2             | переход, если в текущей ячейке 0                            |
-|      | halt         | 0             | остановка                                                   |
+Команды языка однозначно транслируюстя в инструкции.
+
+| Инструкция | Кол-во тактов |
+|:-----------|---------------|
+| inc        | 1             |
+| dec        | 1             |
+| right      | 1             |
+| left       | 1             |
+| input      | 1             |
+| print      | 1             |
+| jmp        | 1             |
+| jz         | 2             |
+| jnz        | 2             |
+| halt       | 1             |
+| mov        | 1             |
+| add        | 1             |
+| sub        | 1             |
+| mod        | 1             |
+| mul        | 1             |
+| call       | 4             |
+| ret        | 2             |
+| add_str    | 2             |
+| print_char | 4             |
+| ei         | 5             |
+| di         | 1             |
+| iret       | 1             |
+| store      | 1             |
 
 - `<addr>` -- исключительно непосредственная адресация памяти команд.
 
@@ -162,28 +222,13 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 
 Интерфейс командной строки: `translator.py <input_file> <target_file>`
 
-Реализовано в модуле: [translator](./translator.py)
+Реализован в модуле [translator](./translator.py)
 
-Этапы трансляции (функция `translate`):
+Трансляция реализуется в два прохода:
 
-1. Трансформирование текста в последовательность значимых термов.
-2. Проверка корректности программы (парность квадратных скобок).
-3. Генерация машинного кода.
-
-Правила генерации машинного кода:
-
-- один символ языка -- одна инструкция;
-- для команд, однозначно соответствующих инструкциям, -- прямое отображение;
-- для циклов с соблюдением парности (многоточие -- произвольный код):
-
-    | Номер команды/инструкции | Программа | Машинный код |
-    |:-------------------------|:----------|:-------------|
-    | n                        | `[`       | `JZ (k+1)`   |
-    | ...                      | ...       | ...          |
-    | k                        | `]`       | `JMP n`      |
-    | k+1                      | ...       | ...          |
-
-Примечание: вопросы отображения переменных на регистры опущены из-за отсутствия оных.
+1. Генерация машинного кода без адресов переходов и расчёт значений меток перехода.
+    - Ассемблерные мнемоники один в один транслируются в машинные команды.
+2. Подстановка меток перехода в инструкции.
 
 ## Модель процессора
 
@@ -193,93 +238,13 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 
 ### DataPath
 
-``` text
-     latch --------->+--------------+  addr   +--------+
-     data            | data_address |---+---->|  data  |
-     addr      +---->+--------------+   |     | memory |
-               |                        |     |        |
-           +-------+                    |     |        |
-    sel -->|  MUX  |         +----------+     |        |
-           +-------+         |                |        |
-            ^     ^          |                |        |
-            |     |          |       data_in  |        | data_out
-            |     +---(+1)---+          +---->|        |-----+
-            |                |          |     |        |     |
-            +---------(-1)---+          |  oe |        |     |
-                                        | --->|        |     |
-                                        |     |        |     |
-                                        |  wr |        |     |
-                                        | --->|        |     |
-                                        |     +--------+     |
-                                        |                    v
-                                    +--------+  latch_acc +-----+
-                          sel ----> |  MUX   |  --------->| acc |
-                                    +--------+            +-----+
-                                     ^   ^  ^                |
-                                     |   |  |                +---(==0)---> zero
-                                     |   |  |                |
-                                     |   |  +---(+1)---------+
-                                     |   |                   |
-                                     |   +------(-1)---------+
-                                     |                       |
-            input -------------------+                       +---------> output
-```
+![DataPath](./schema.jpg)
 
 Реализован в классе `DataPath`.
 
-`data_memory` -- однопортовая память, поэтому либо читаем, либо пишем.
-
-Сигналы (обрабатываются за один такт, реализованы в виде методов класса):
-
-- `latch_data_addr` -- защёлкнуть выбранное значение в `data_addr`;
-- `latch_acc` -- защёлкнуть в аккумулятор выход памяти данных;
-- `wr` -- записать выбранное значение в память:
-    - инкрементированное;
-    - декрементированное;
-    - с порта ввода `input` (обработка на Python):
-        - извлечь из входного буфера значение и записать в память;
-        - если буфер пуст -- выбросить исключение;
-- `output` -- записать аккумулятор в порт вывода (обработка на Python).
-
-Флаги:
-
-- `zero` -- отражает наличие нулевого значения в аккумуляторе.
-
 ### ControlUnit
 
-``` text
-   +------------------(+1)-------+
-   |                             |
-   |    latch_program_counter    |
-   |                  |          |
-   |   +-----+        v          |
-   +-->|     |     +---------+   |    +---------+
-       | MUX |---->| program |---+--->| program |
-   +-->|     |     | counter |        | memory  |
-   |   +-----+     +---------+        +---------+
-   |      ^                               |
-   |      | sel_next                      | current instruction
-   |      |                               |
-   +---------------(select-arg)-----------+
-          |                               |      +---------+
-          |                               |      |  step   |
-          |                               |  +---| counter |
-          |                               |  |   +---------+
-          |                               v  v        ^
-          |                       +-------------+     |
-          +-----------------------| instruction |-----+
-                                  |   decoder   |
-                                  |             |<-------+
-                                  +-------------+        |
-                                          |              |
-                                          | signals      |
-                                          v              |
-                                    +----------+  zero   |
-                                    |          |---------+
-                                    | DataPath |
-                     input -------->|          |----------> output
-                                    +----------+
-```
+![ControlUnit](./schema.jpg)
 
 Реализован в классе `ControlUnit`.
 
@@ -288,9 +253,7 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 - `step_counter` необходим для многотактовых инструкций;
     - в реализации класс `ControlUnit` отсутствует, т.к. неявно задан потоком управления.
 
-Сигнал:
-
-- `latch_program_counter` -- сигнал для обновления счётчика команд в ControlUnit.
+Основная работа с данными происходит на уровне DataPath, а ControlUnit с помощью сигналов работает с этими данными. ControlUnit реализован как hardwired.
 
 Особенности работы модели:
 
@@ -307,12 +270,8 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 
 Тестирование выполняется при помощи golden test-ов.
 
-1. Тесты для языка `bf` реализованы в: [golden_bf_test.py](./golden_bf_test.py). Конфигурации:
-    - [golden/cat_bf.yml](golden/cat_bf.yml)
-    - [golden/hello_bf.yml](golden/hello_bf.yml)
-1. Тесты для языка `asm` реализованы в: [golden_asm_test.py](./golden_asm_test.py). Конфигурации:
-    - [golden/cat_asm.yml](golden/cat_asm.yml)
-1. Традиционные интеграционные тесты: [integration_test.py](./integration_test.py) (Depricated).
+Тесты для языка `asm` реализованы в: [golden_test.py](./golden_test.py). Конфигурации:
+    - [golden/cat.yml](golden/cat.yml)
 
 Запустить тесты: `poetry run pytest . -v`
 
@@ -321,9 +280,12 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 CI при помощи Github Action:
 
 ``` yaml
-defaults:
-  run:
-    working-directory: ./python
+name: Python CI
+
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   test:
@@ -336,12 +298,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install poetry
+          python3 -m pip install --upgrade pip
+          pip3 install poetry
           poetry install
 
       - name: Run tests and collect coverage
@@ -361,12 +323,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install poetry
+          python3 -m pip install --upgrade pip
+          pip3 install poetry
           poetry install
 
       - name: Check code formatting with Ruff
@@ -386,76 +348,218 @@ jobs:
 Пример использования и журнал работы процессора на примере `cat`:
 
 ``` shell
-$ cd src/brainfuck
-$ cat examples/foo_input.txt
-foo
-$ cat examples/cat.bf
-,[.,]
-$ ./translator.py examples/cat.bf target.out
-source LoC: 1 code instr: 6
-$ cat target.out
-[{"index": 0, "opcode": "input", "term": [1, 1, ","]},
- {"index": 4, "opcode": "jz", "arg": 5, "term": [1, 2, "["]},
- {"index": 2, "opcode": "print", "term": [1, 3, "."]},
- {"index": 3, "opcode": "input", "term": [1, 4, ","]},
- {"index": 4, "opcode": "jmp", "arg": 1, "term": [1, 5, "]"]},
- {"opcode": "halt"}]⏎
-$ ./machine.py target.out examples/foo_input.txt
-DEBUG:root:TICK:   0 PC:   0 ADDR:   0 MEM_OUT: 0 ACC: 0  input  (','@1:1)
-DEBUG:root:input: 'f'
-DEBUG:root:TICK:   2 PC:   1 ADDR:   0 MEM_OUT: 102 ACC: 0  jz 5  ('['@1:2)
-DEBUG:root:TICK:   4 PC:   2 ADDR:   0 MEM_OUT: 102 ACC: 102  print  ('.'@1:3)
-DEBUG:root:output: '' << 'f'
-DEBUG:root:TICK:   6 PC:   3 ADDR:   0 MEM_OUT: 102 ACC: 102  input  (','@1:4)
-DEBUG:root:input: 'o'
-DEBUG:root:TICK:   8 PC:   4 ADDR:   0 MEM_OUT: 111 ACC: 102  jmp 1  (']'@1:5)
-DEBUG:root:TICK:   9 PC:   1 ADDR:   0 MEM_OUT: 111 ACC: 102  jz 5  ('['@1:2)
-DEBUG:root:TICK:  11 PC:   2 ADDR:   0 MEM_OUT: 111 ACC: 111  print  ('.'@1:3)
-DEBUG:root:output: 'f' << 'o'
-DEBUG:root:TICK:  13 PC:   3 ADDR:   0 MEM_OUT: 111 ACC: 111  input  (','@1:4)
-DEBUG:root:input: 'o'
-DEBUG:root:TICK:  15 PC:   4 ADDR:   0 MEM_OUT: 111 ACC: 111  jmp 1  (']'@1:5)
-DEBUG:root:TICK:  16 PC:   1 ADDR:   0 MEM_OUT: 111 ACC: 111  jz 5  ('['@1:2)
-DEBUG:root:TICK:  18 PC:   2 ADDR:   0 MEM_OUT: 111 ACC: 111  print  ('.'@1:3)
-DEBUG:root:output: 'fo' << 'o'
-DEBUG:root:TICK:  20 PC:   3 ADDR:   0 MEM_OUT: 111 ACC: 111  input  (','@1:4)
-DEBUG:root:input: '\n'
-DEBUG:root:TICK:  22 PC:   4 ADDR:   0 MEM_OUT: 10 ACC: 111  jmp 1  (']'@1:5)
-DEBUG:root:TICK:  23 PC:   1 ADDR:   0 MEM_OUT: 10 ACC: 111  jz 5  ('['@1:2)
-DEBUG:root:TICK:  25 PC:   2 ADDR:   0 MEM_OUT: 10 ACC: 10  print  ('.'@1:3)
-DEBUG:root:output: 'foo' << '\n'
-DEBUG:root:TICK:  27 PC:   3 ADDR:   0 MEM_OUT: 10 ACC: 10  input  (','@1:4)
-WARNING:root:Input buffer is empty!
-INFO:root:output_buffer: 'foo\n'
+> python translator.py asm/cat.asm instructions.txt 
+source LoC: 14 code instr: 9
+> python machine.py instructions.txt int_input.txt
+DEBUG:root:TICK:   0 PC: 100 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         ei  ('ei'@1:0)
+DEBUG:root:TICK:   1 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:   2 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:   3 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:   4 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:   5 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:   6 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:   7 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:   8 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:   9 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  10 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  11 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  12 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  13 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  14 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  15 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  16 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  17 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  18 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  19 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  20 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  21 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  22 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  23 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  24 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  25 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  26 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  27 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  28 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  29 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  30 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  31 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  32 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  33 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  34 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  35 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  36 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  37 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  38 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  39 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  40 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  41 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  42 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  43 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  44 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  45 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  46 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  47 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  48 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  49 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  50 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  51 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  52 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  53 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  54 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  55 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  56 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  57 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  58 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  59 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  60 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  61 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  62 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  63 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  64 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  65 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  66 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  67 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  68 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  69 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  70 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  71 PC: 101 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jmp 101  ('jmp loop'@3:0)
+DEBUG:root:START HANDLING INTERRUPTION
+DEBUG:root:TICK:  72 PC: 103 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         input  ('input'@7:0)
+DEBUG:root:input: 'K'
+DEBUG:root:TICK:  73 PC: 104 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK:  74 PC: 104 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK:  75 PC: 105 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:TICK:  76 PC: 105 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:output: '' << 'K'
+DEBUG:root:TICK:  77 PC: 106 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        ei  ('ei'@10:0)
+DEBUG:root:TICK:  78 PC: 107 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        iret  ('iret'@11:0)
+DEBUG:root:STOP HANDLING INTERRUPTION
+DEBUG:root:TICK:  79 PC: 101 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  80 PC: 101 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  81 PC: 101 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:START HANDLING INTERRUPTION
+DEBUG:root:TICK:  82 PC: 103 ADDR:   0 MEM_OUT: 75 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        input  ('input'@7:0)
+DEBUG:root:input: 'A'
+DEBUG:root:TICK:  83 PC: 104 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK:  84 PC: 104 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK:  85 PC: 105 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:TICK:  86 PC: 105 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:output: 'K' << 'A'
+DEBUG:root:TICK:  87 PC: 106 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        ei  ('ei'@10:0)
+DEBUG:root:TICK:  88 PC: 107 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        iret  ('iret'@11:0)
+DEBUG:root:STOP HANDLING INTERRUPTION
+DEBUG:root:TICK:  89 PC: 101 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  90 PC: 101 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK:  91 PC: 101 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:START HANDLING INTERRUPTION
+DEBUG:root:TICK:  92 PC: 103 ADDR:   0 MEM_OUT: 65 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        input  ('input'@7:0)
+DEBUG:root:input: 'M'
+DEBUG:root:TICK:  93 PC: 104 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK:  94 PC: 104 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK:  95 PC: 105 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:TICK:  96 PC: 105 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:output: 'KA' << 'M'
+DEBUG:root:TICK:  97 PC: 106 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        ei  ('ei'@10:0)
+DEBUG:root:TICK:  98 PC: 107 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        iret  ('iret'@11:0)
+DEBUG:root:STOP HANDLING INTERRUPTION
+DEBUG:root:TICK:  99 PC: 101 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 100 PC: 101 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 101 PC: 101 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:START HANDLING INTERRUPTION
+DEBUG:root:TICK: 102 PC: 103 ADDR:   0 MEM_OUT: 77 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        input  ('input'@7:0)
+DEBUG:root:input: 'I'
+DEBUG:root:TICK: 103 PC: 104 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 104 PC: 104 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 105 PC: 105 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:TICK: 106 PC: 105 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:output: 'KAM' << 'I'
+DEBUG:root:TICK: 107 PC: 106 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        ei  ('ei'@10:0)
+DEBUG:root:TICK: 108 PC: 107 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        iret  ('iret'@11:0)
+DEBUG:root:STOP HANDLING INTERRUPTION
+DEBUG:root:TICK: 109 PC: 101 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 110 PC: 101 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 111 PC: 101 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:START HANDLING INTERRUPTION
+DEBUG:root:TICK: 112 PC: 103 ADDR:   0 MEM_OUT: 73 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        input  ('input'@7:0)
+DEBUG:root:input: 'L'
+DEBUG:root:TICK: 113 PC: 104 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 114 PC: 104 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 115 PC: 105 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:TICK: 116 PC: 105 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:output: 'KAMI' << 'L'
+DEBUG:root:TICK: 117 PC: 106 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        ei  ('ei'@10:0)
+DEBUG:root:TICK: 118 PC: 107 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        iret  ('iret'@11:0)
+DEBUG:root:STOP HANDLING INTERRUPTION
+DEBUG:root:TICK: 119 PC: 101 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 120 PC: 101 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 121 PC: 101 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:START HANDLING INTERRUPTION
+DEBUG:root:TICK: 122 PC: 103 ADDR:   0 MEM_OUT: 76 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        input  ('input'@7:0)
+DEBUG:root:input: '4'
+DEBUG:root:TICK: 123 PC: 104 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 124 PC: 104 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 125 PC: 105 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:TICK: 126 PC: 105 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        print  ('print'@9:0)
+DEBUG:root:output: 'KAMIL' << '4'
+DEBUG:root:TICK: 127 PC: 106 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        ei  ('ei'@10:0)
+DEBUG:root:TICK: 128 PC: 107 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        iret  ('iret'@11:0)
+DEBUG:root:STOP HANDLING INTERRUPTION
+DEBUG:root:TICK: 129 PC: 101 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 130 PC: 101 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 131 PC: 101 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        jmp 101  ('jmp loop'@3:0)
+DEBUG:root:START HANDLING INTERRUPTION
+DEBUG:root:TICK: 132 PC: 103 ADDR:   0 MEM_OUT: 52 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0        input  ('input'@7:0)
+DEBUG:root:input: 'i'
+DEBUG:root:TICK: 133 PC: 104 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 134 PC: 104 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 135 PC: 105 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       print  ('print'@9:0)
+DEBUG:root:TICK: 136 PC: 105 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       print  ('print'@9:0)
+DEBUG:root:output: 'KAMIL4' << 'i'
+DEBUG:root:TICK: 137 PC: 106 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       ei  ('ei'@10:0)
+DEBUG:root:TICK: 138 PC: 107 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       iret  ('iret'@11:0)
+DEBUG:root:STOP HANDLING INTERRUPTION
+DEBUG:root:TICK: 139 PC: 101 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 140 PC: 101 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       jmp 101  ('jmp loop'@3:0)
+DEBUG:root:TICK: 141 PC: 101 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       jmp 101  ('jmp loop'@3:0)
+DEBUG:root:START HANDLING INTERRUPTION
+DEBUG:root:TICK: 142 PC: 103 ADDR:   0 MEM_OUT: 105 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       input  ('input'@7:0)
+DEBUG:root:input: 'k'
+DEBUG:root:TICK: 143 PC: 104 ADDR:   0 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 152 PC: 103 ADDR:   0 MEM_OUT: 107 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0       input  ('input'@7:0)
+DEBUG:root:input: '\x00'
+DEBUG:root:TICK: 153 PC: 104 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 154 PC: 104 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         jz [108, 'ir']  ('jz break,ir'@8:0)
+DEBUG:root:TICK: 155 PC: 108 ADDR:   0 MEM_OUT: 0 rs: 0 rc: 0 r1: 0 r2: 0 r3: 0         halt  ('halt'@14:0)
+INFO:root:output_buffer: 'KAMIL4ik'
+KAMIL4ik
+instr_counter:  138 ticks: 155
 ```
 
 Пример проверки исходного кода:
 
 ``` shell
-$ poetry run pytest . -v
-=================================== test session starts ====================================
-platform darwin -- Python 3.12.0, pytest-7.4.3, pluggy-1.3.0 -- /Users/ryukzak/Library/Caches/pypoetry/virtualenvs/brainfuck-NIOcuFng-py3.12/bin/python
+poetry run pytest . -v
+============================================================== test session starts ===============================================================
+platform win32 -- Python 3.11.4, pytest-7.4.4, pluggy-1.5.0 -- C:\Users\kamil\AppData\Local\pypoetry\Cache\virtualenvs\asm-Gv7gZYCv-py3.11\Scripts\python.exe
 cachedir: .pytest_cache
-rootdir: /Users/ryukzak/edu/csa/src/brainfuck
+rootdir: D:\itmo\web\test\csa\asm
 configfile: pyproject.toml
 plugins: golden-0.2.2
-collected 6 items
+collected 4 items                                                                                                                                 
 
-integration_test.py::test_translator_and_machine[golden/cat.yml] PASSED              [ 16%]
-integration_test.py::test_translator_and_machine[golden/hello.yml] PASSED            [ 33%]
-integration_test.py::TestTranslatorAndMachine::test_cat_example PASSED               [ 50%]
-integration_test.py::TestTranslatorAndMachine::test_cat_example_log PASSED           [ 66%]
-integration_test.py::TestTranslatorAndMachine::test_hello_example PASSED             [ 83%]
-machine.py::machine.DataPath.signal_wr PASSED                                        [100%]
+golden_test.py::test_translator_asm_and_machine[golden/cat.yml] PASSED                                                                      [ 25%]
+golden_test.py::test_translator_asm_and_machine[golden/hello.yml] PASSED                                                                    [ 50%]
+golden_test.py::test_translator_asm_and_machine[golden/hello_user.yml] PASSED                                                               [ 75%]
+golden_test.py::test_translator_asm_and_machine[golden/prob1.yml] PASSED                                                                    [100%]
 
-==================================== 6 passed in 0.14s =====================================
-$ poetry run ruff check .
-$ poetry run ruff format .
-4 files left unchanged
+=============================================================== 4 passed in 2.18s ================================================================ 
+poetry run ruff check .
 ```
 
 ```text
-| ФИО                            | алг   | LoC | code байт | code инстр. | инстр. | такт. | вариант |
-| Пенской Александр Владимирович | hello | ... | -         | ...         | ...    | ...   | ...     |
-| Пенской Александр Владимирович | cat   | 1   | -         | 6           | 15     | 28    | ...     |
+| ФИО                         | алг        | LoC | code инстр. | инстр. | такт. |
+| Галлямов Камиль Рустемович  | cat        | 14  | 9           | 138    | 155   |
+| Галлямов Камиль Рустемович  | hello      | 17  | 10          | 65     | 78    |
+| Галлямов Камиль Рустемович  | hello_user | 53  | 31          | 254    | 301   |
+| Галлямов Камиль Рустемович  | prob1      | 21  | 11          | 7462   | 9461  |
 ```

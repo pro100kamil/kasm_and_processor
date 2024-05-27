@@ -25,7 +25,6 @@ class Opcode(str, Enum):
     MUL = "mul"
 
     ADD_STR = "add_str"
-    PRINT_STR = "print_str"
 
     EI = "ei"
     DI = "di"
@@ -35,8 +34,6 @@ class Opcode(str, Enum):
 
     RIGHT = "right"
     LEFT = "left"
-
-    LD = "ld"  # don't use
 
     PRINT_CHAR = "print_char"
 

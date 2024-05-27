@@ -19,7 +19,7 @@ int1:
     di
     right
     input
-    jz break,acc
+    jz break,ir
     inc r3
     ei
     iret

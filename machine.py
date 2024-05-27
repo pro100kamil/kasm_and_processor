@@ -4,7 +4,6 @@ import logging
 import sys
 from typing import ClassVar
 
-from exceptions import UnknownCommandError
 from isa import Opcode, read_code
 
 INTERRUPTION_VECTOR_INDEX = 99
@@ -34,6 +33,7 @@ class ALU:
     res = None
 
     def calc(self, op: Opcode, left: int, right: int) -> int:
+        assert op in self.operations, f"Unknown operation: {op}"
         self.res = self.operations.get(op)(left, right)
         self.zero = self.res == 0
         return self.res
@@ -70,16 +70,15 @@ class DataPath:
 
     data_register: int = None
     input_register: int = None
+    output_register: int = None
 
     program_counter: int = None
-    "Счётчик команд. Инициализируется сдвигом, потому что данные лежат до команд."
 
     prev_program_counter: int = None
 
     output_buffer: list = None
 
     registers: ClassVar[dict[str, int]] = {
-        "acc": 0,
         "r1": 0,
         "r2": 0,
         "r3": 0,
@@ -113,7 +112,7 @@ class DataPath:
 
         self.interruption_controller = InterruptionController()
 
-    def signal_latch_program_counter(self, sel_next):
+    def signal_latch_program_counter(self, sel_next: bool):
         """Защёлкнуть новое значение счётчика команд.
 
         Если `sel_next` равен `True`, то счётчик будет увеличен на единицу,
@@ -124,12 +123,12 @@ class DataPath:
         else:
             self.program_counter = self.data_register
 
-    def signal_latch_input_register(self, value):
+    def signal_latch_input_register(self, value: int):
         """Защёлкнуть новое значение регистра ввода."""
         self.input_register = value
 
-    def signal_latch_data_register(self, value):
-        """Защёлкнуть новое значение регистра ввода."""
+    def signal_latch_data_register(self, value: int):
+        """Защёлкнуть новое значение регистра данных."""
         self.data_register = value
 
     def signal_latch_data_addr(self, sel):
@@ -153,11 +152,11 @@ class DataPath:
 
         assert 0 <= self.data_address < len(self.memory.memory), "out of memory: {}".format(self.data_address)
 
-    def signal_latch_acc(self):
+    def signal_latch_output_register(self):
         """Защёлкнуть слово из памяти (`oe` от Output Enable) и защёлкнуть его в
         аккумулятор. Сигнал `oe` выставляется неявно `ControlUnit`-ом.
         """
-        self.registers["acc"] = self.memory.memory[self.data_address]
+        self.output_register = self.memory.memory[self.data_address]
 
     def signal_latch_r(self, register_name: str, value):
         # для r1, ..., r7 (регистров общего назначения)
@@ -167,7 +166,7 @@ class DataPath:
         if sel == "imml":
             self.alu_l_value = self.imml
         else:
-            self.alu_l_value = self.registers.get(sel)
+            self.alu_l_value = self.input_register if sel == "ir" else self.registers.get(sel)
 
     def signal_alu_r(self, sel: str):
         if sel == "0":
@@ -175,7 +174,7 @@ class DataPath:
         elif sel == "immr":
             self.alu_r_value = self.immr
         else:
-            self.alu_r_value = self.registers.get(sel)
+            self.alu_r_value = self.input_register if sel == "ir" else self.registers.get(sel)
 
     def signal_alu_op(self, sel: Opcode):
         res = self.alu.calc(sel, self.alu_l_value, self.alu_r_value)
@@ -204,22 +203,14 @@ class DataPath:
             Opcode.INPUT.value,
         }, "internal error, incorrect selector: {}".format(sel)
 
-        if sel == Opcode.INC.value:
-            self.memory.memory[self.data_address] = self.registers["acc"] + 1
-            if self.memory.memory[self.data_address] == 128:
-                self.memory.memory[self.data_address] = -128
-        elif sel == Opcode.DEC.value:
-            self.memory.memory[self.data_address] = self.registers["acc"] - 1
-            if self.memory.memory[self.data_address] == -129:
-                self.memory.memory[self.data_address] = 127
-        elif sel == Opcode.INPUT.value:
+        if sel == Opcode.INPUT.value:
             self.data_address = self.new_data_address
 
             symbol_code = self.input_register
             symbol = chr(symbol_code)
             assert -128 <= symbol_code <= 127, "input token is out of bound: {}".format(symbol_code)
             self.memory.memory[self.data_address] = symbol_code
-            self.registers["acc"] = symbol_code
+
             logging.debug("input: %s", repr(symbol))
 
     def signal_output(self):
@@ -228,7 +219,7 @@ class DataPath:
         Вывод осуществляется путём конвертации значения аккумулятора в символ по
         ASCII-таблице.
         """
-        symbol = chr(self.registers["acc"])
+        symbol = chr(self.output_register)
         logging.debug("output: %s << %s", repr("".join(self.output_buffer)), repr(symbol))
         self.output_buffer.append(symbol)
 
@@ -281,6 +272,8 @@ class ControlUnit:
             return
 
         self.handling_interruption = True
+
+        self.data_path.prev_program_counter = self.data_path.program_counter
 
         self.data_path.program_counter = self.memory.memory[INTERRUPTION_VECTOR_INDEX]
 
@@ -382,7 +375,7 @@ class ControlUnit:
 
     def execute_print(self, instr, opcode, phase):
         if phase == 1:
-            self.data_path.signal_latch_acc()
+            self.data_path.signal_latch_output_register()
             self.tick()
             return None
 
@@ -398,7 +391,7 @@ class ControlUnit:
         else:
             self.data_path.data_address = instr["arg"][0]
 
-        self.data_path.signal_latch_acc()
+        self.data_path.signal_latch_output_register()
         self.data_path.signal_output()
 
         self.data_path.signal_latch_program_counter(sel_next=True)
@@ -426,6 +419,7 @@ class ControlUnit:
         self.data_path.signal_alu_op(instr["opcode"])
 
         value = self.data_path.alu.res
+
         self.data_path.signal_latch_r(a, value)
 
         self.data_path.signal_latch_program_counter(sel_next=True)
@@ -506,7 +500,15 @@ class ControlUnit:
 
     def execute_iret(self, instr, opcode, phase):
         self.handling_interruption = False
-        self.data_path.signal_latch_program_counter(sel_next=True)
+
+        addr = self.data_path.prev_program_counter
+
+        self.data_path.signal_latch_data_register(addr)
+
+        self.data_path.prev_program_counter = None
+
+        self.data_path.signal_latch_program_counter(sel_next=False)
+
         self.tick()
 
         self.data_path.interruption_controller.interruption = False
@@ -556,12 +558,6 @@ class ControlUnit:
             self.tick()
             return True
 
-        if opcode == Opcode.ADD_STR:
-            # TODO убрать
-            self.data_path.signal_latch_program_counter(sel_next=True)
-            self.tick()
-            return True
-
         if opcode in {Opcode.MOD, Opcode.MUL, Opcode.ADD, Opcode.SUB}:
             return self.execute_binary_operation(instr, opcode, phase)
 
@@ -576,12 +572,10 @@ class ControlUnit:
             Opcode.DI: self.execute_di,
             Opcode.IRET: self.execute_iret,
             Opcode.PRINT: self.execute_print,
-            Opcode.INPUT: self.execute_input
+            Opcode.INPUT: self.execute_input,
         }
 
-        if opcode not in opcode2handler:
-            print(opcode)
-            raise UnknownCommandError(opcode.value)
+        assert opcode in opcode2handler, f"command {opcode.value} is unknown"
 
         func = opcode2handler[opcode]
 
@@ -589,18 +583,18 @@ class ControlUnit:
 
     def __repr__(self):
         """Вернуть строковое представление состояния процессора."""
-        state_repr = "TICK: {:3} PC: {:3} ADDR: {:3} MEM_OUT: {} ACC: {} rs: {} rc: {} r1: {} r2: {} r3: {}".format(
+        state_repr = "TICK: {:3} PC: {:3} ADDR: {:3} MEM_OUT: {} rs: {} rc: {} r1: {} r2: {} r3: {}".format(
             self._tick,
             self.data_path.program_counter,
             self.data_path.data_address,
             self.memory.memory[self.data_path.data_address],
-            self.data_path.registers.get("acc"),
             self.data_path.registers.get("rs"),
             self.data_path.registers.get("rc"),
             self.data_path.registers.get("r1"),
             self.data_path.registers.get("r2"),
             self.data_path.registers.get("r3"),
         )
+
         instr = self.memory.memory[self.data_path.program_counter]
         opcode = instr["opcode"]
         instr_repr = str(opcode)
@@ -617,10 +611,10 @@ class ControlUnit:
 
 def initiate_interruption(control_unit: ControlUnit, input_tokens: list):
     if (
-            not control_unit.handling_interruption
-            and control_unit.interruption_enabled
-            and len(input_tokens) != 0
-            and not control_unit.data_path.interruption_controller.interruption
+        not control_unit.handling_interruption
+        and control_unit.interruption_enabled
+        and len(input_tokens) != 0
+        and not control_unit.data_path.interruption_controller.interruption
     ):
         next_token = input_tokens[0]
         if control_unit.current_tick() > next_token[0]:

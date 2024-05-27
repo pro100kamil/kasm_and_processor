@@ -5,7 +5,7 @@ loop:
 int1:
     di
     input
-    jz break,acc
+    jz break,ir
     print
     ei
     iret
