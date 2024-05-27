@@ -78,7 +78,7 @@ class DataPath:
 
     output_buffer: list = None
 
-    registers: dict[str, int] = None
+    registers = None
 
     imml: int = None
     immr: int = None
