@@ -2,7 +2,7 @@
 
 - Галлямов Камиль Рустемович, P3210
 - `asm | risc | neum | hw | tick -> instr | struct | trap -> stream | port | pstr | prob1 | spi`
-- Базовый вариант
+- Базовый вариант (без усложнения)
 
 ## Язык программирования
 
@@ -57,7 +57,7 @@ arg ::= label_name | integer | register
 
 register ::= "r" digit
 
-integer ::= [ "-" ] { digit }
+integer ::= [ "-" ] { digit }-
 
 digit ::= <any of "0-9">
 
@@ -87,7 +87,7 @@ comment ::= ";" <any symbols except "\n">
 - `mod r,v1,v2` -- записать в регистр r значение v1 % v2 (v1, v2 - числа или регистры)
 - `mul r,v1,v2` -- записать в регистр r значение v1 * v2 (v1, v2 - числа или регистры)
 
-- `call` -- вызов процедуры (аргументы через регистры)
+- `call addr` -- вызов процедуры (аргументы через регистры)
 - `ret` -- завершение процедуры
 
 - `add_str l,s` -- записать в память строку s длины l
@@ -135,10 +135,11 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 ```
 
 Общая память для данных и инструкций, 
-поэтому данные хранятся как числа, а инструкции как словарь.
-Вектор прерывания - это число - номер ячейки, в которой начинается обработка прерываний.
+поэтому данные хранятся как числа, а инструкции как словари.
+Вектор прерывания - это число - номер ячейки, в которой начинается обработка прерываний. 
+Его записывает транслятор в зависимости от соответсвующей метки.
 
-ДОПИСАТЬ!
+Есть следующие виды адресации: непосредственная, регистровая.
 
 В связи с отсутствием на уровне языка переменных, констант, литералов и т.д., описание механизмов работы с ними -- отсутствует. Содержание раздела -- смотри в задании.
 
@@ -155,7 +156,8 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 
 ### Набор инструкций
 
-Команды языка однозначно транслируюстя в инструкции.
+Команды языка однозначно транслируюстя в инструкции. 
+Команда add_str выполняется на этапе трансляции.
 
 | Инструкция | Кол-во тактов |
 |:-----------|---------------|
@@ -182,8 +184,6 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 | di         | 1             |
 | iret       | 1             |
 | store      | 1             |
-
-- `<addr>` -- исключительно непосредственная адресация памяти команд.
 
 ### Кодирование инструкций
 
@@ -271,7 +271,11 @@ jmp label   ; --> `jmp 123`, где 123 - номер инструкции пос
 Тестирование выполняется при помощи golden test-ов.
 
 Тесты для языка `asm` реализованы в: [golden_test.py](./golden_test.py). Конфигурации:
-    - [golden/cat.yml](golden/cat.yml)
+
+* [cat](./golden/cat.yml)
+* [hello](./golden/hello.yml)
+* [hello_user](./golden/hello_user.yml)
+* [prob1](./golden/prob1.yml)
 
 Запустить тесты: `poetry run pytest . -v`
 
@@ -285,57 +289,39 @@ name: Python CI
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
-  test:
+  kasm_and_processor:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.11
 
-      - name: Install dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          pip3 install poetry
-          poetry install
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install
 
-      - name: Run tests and collect coverage
-        run: |
-          poetry run coverage run -m pytest .
-          poetry run coverage report -m
-        env:
-          CI: true
+    - name: Run tests and coverage
+      run: |
+        poetry run pytest
+        poetry run coverage run -m pytest
+        poetry run coverage report
 
-  lint:
-    runs-on: ubuntu-latest
+    - name: Check code formatting
+      run: poetry run ruff format --check .
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-
-      - name: Install dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          pip3 install poetry
-          poetry install
-
-      - name: Check code formatting with Ruff
-        run: poetry run ruff format --check .
-
-      - name: Run Ruff linters
-        run: poetry run ruff check .
+    - name: Run code linting
+      run: |
+        poetry run ruff check .
 ```
 
 где:
